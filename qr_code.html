@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>QR-Codes Adventskalender</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .code {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+      width: 170px;
+      text-align: center;
+    }
+    .code h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.1rem;
+    }
+    .code img {
+      width: 150px;
+      height: 150px;
+    }
+  </style>
+</head>
+<body>
+  <h1>QR-Codes für den Adventskalender</h1>
+  <div class="container" id="qr-container"></div>
+
+  <script>
+    // Basis-URL deines Projekts
+    const base = "https://sascha695.github.io/advent-calendar/advent-calendar/";
+
+    // Container holen
+    const container = document.getElementById("qr-container");
+
+    // 24 QR-Codes automatisch erzeugen
+    for (let day = 1; day <= 24; day++) {
+      const url = base + "day" + day + ".html";
+      const encoded = encodeURIComponent(url);
+
+      // HTML-Block pro Tag
+      const div = document.createElement("div");
+      div.className = "code";
+      div.innerHTML = `
+        <h3>Tag ${day}</h3>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=200x200" alt="QR Code Tag ${day}">
+        <small>${url}</small>
+      `;
+      container.appendChild(div);
+    }
+  </script>
+</body>
+</html>
+Fixed working QR codes for Advent calendar
