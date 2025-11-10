@@ -105,7 +105,41 @@
 
       <div id="scene" class="scene">
         <!-- Dein Bild – Pfad gern anpassen -->
-        <img id="wimmel" src="./assets/tag2_wimmelbild.png" alt="...">
+        <img id="wimmel"
+     alt="Weihnachtliches Wimmelbild"
+     data-name="tag2_wimmelbild"           <!-- Dateiname ohne Endung -->
+     data-exts="jpg,jpeg,png,webp"         <!-- zulässige Endungen -->
+     data-dirs=".,images,assets,assets/images,../images,../assets,../assets/images,../../images,../../assets,../../assets/images">
+        <script>
+(function () {
+  const img = document.getElementById('wimmel');
+  // Falls du lieber den kompletten Namen inkl. Endung angibst, setz data-name z.B. auf "foto.XYZ.png"
+  const base = img.getAttribute('data-name') || 'wimmelbild';
+  const exts = (img.getAttribute('data-exts') || 'jpg,jpeg,png,webp').split(',');
+  const dirs = (img.getAttribute('data-dirs') || '.,images').split(',');
+
+  // Kandidaten generieren (auch mit Klein-/Großschreibung)
+  const names = base.includes('.') ? [base] : exts.flatMap(e => [base + '.' + e, base.toLowerCase() + '.' + e]);
+  const candidates = [];
+  dirs.forEach(d => names.forEach(n => candidates.push((d === '.' ? '' : (d.replace(/\/?$/, '/') )) + n)));
+
+  // nacheinander testen
+  (function tryNext(i=0){
+    if (i >= candidates.length) {
+      console.warn('Kein Bild gefunden. Getestet:', candidates);
+      img.insertAdjacentHTML('afterend',
+        '<div style="margin:.6rem 0;padding:.6rem .8rem;border-radius:8px;background:#fee;color:#b91c1c;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,.12)">' +
+        'Bild nicht gefunden. Getestete Pfade:<br><small>'+candidates.join('<br>')+'</small></div>');
+      return;
+    }
+    const url = candidates[i];
+    const test = new Image();
+    test.onload = () => { img.src = url; /* optional: console.log('Bild gefunden:', url); */ };
+    test.onerror = () => tryNext(i+1);
+    test.src = url;
+  })();
+})();
+</script>
 
         <!-- 🎯 Ziel-Hotspot (unsichtbar).  TOP/LEFT ggf. anpassen -->
         <button class="hit" id="santa" style="top:62%; left:55%;" aria-label="Weihnachtsmann"></button>
