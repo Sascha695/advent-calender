@@ -104,39 +104,33 @@
       <div id="feedback" class="msg"></div>
 
       <div id="scene" class="scene">
-        <!-- Dein Bild – Pfad gern anpassen -->
-        <img id="wimmel"
-     alt="Weihnachtliches Wimmelbild"
-     data-name="tag2_wimmelbild"           <!-- Dateiname ohne Endung -->
-     data-exts="jpg,jpeg,png,webp"         <!-- zulässige Endungen -->
-     data-dirs=".,images,assets,assets/images,../images,../assets,../assets/images,../../images,../../assets,../../assets/images">
-        <script>
+  <!-- Bild: sauber geschlossen, KEINE Kommentare im Tag -->
+  <img id="wimmel"
+       alt="Weihnachtliches Wimmelbild"
+       data-name="tag2_wimmelbild"
+       data-exts="jpg,jpeg,png,webp"
+       data-dirs=".,images,assets,assets/images,../images,../assets,../assets/images,../../images,../../assets,../../assets/images" />
+
+  <!-- 🎯 Ziel-Hotspot (unsichtbar).  TOP/LEFT ggf. anpassen -->
+  <button class="hit" id="santa" style="top:62%; left:55%;" aria-label="Weihnachtsmann"></button>
+
+  <!-- ❌ Unsichtbare Ablenker -->
+  <button class="hit decoy" style="top:23%; left:18%;"></button>
+  <button class="hit decoy" style="top:26%; left:35%;"></button>
+  <button class="hit decoy" style="top:29%; left:63%;"></button>
+  <button class="hit decoy" style="top:40%; left:76%;"></button>
+  <button class="hit decoy" style="top:58%; left:25%;"></button>
+  <button class="hit decoy" style="top:66%; left:18%;"></button>
+  <button class="hit decoy" style="top:70%; left:36%;"></button>
+  <button class="hit decoy" style="top:74%; left:72%;"></button>
+  <button class="hit decoy" style="top:48%; left:50%;"></button>
+  <button class="hit decoy" style="top:33%; left:52%;"></button>
+  <button class="hit decoy" style="top:84%; left:42%;"></button>
+</div>
+      <script>
 (function () {
   const img = document.getElementById('wimmel');
-  // Falls du lieber den kompletten Namen inkl. Endung angibst, setz data-name z.B. auf "foto.XYZ.png"
-  const base = img.getAttribute('data-name') || 'wimmelbild';
-  const exts = (img.getAttribute('data-exts') || 'jpg,jpeg,png,webp').split(',');
-  const dirs = (img.getAttribute('data-dirs') || '.,images').split(',');
-
-  // Kandidaten generieren (auch mit Klein-/Großschreibung)
-  const names = base.includes('.') ? [base] : exts.flatMap(e => [base + '.' + e, base.toLowerCase() + '.' + e]);
-  const candidates = [];
-  dirs.forEach(d => names.forEach(n => candidates.push((d === '.' ? '' : (d.replace(/\/?$/, '/') )) + n)));
-
-  // nacheinander testen
-  (function tryNext(i=0){
-    if (i >= candidates.length) {
-      console.warn('Kein Bild gefunden. Getestet:', candidates);
-      <img id="wimmel"
-     alt="Weihnachtliches Wimmelbild"
-     data-name="tag2_wimmelbild"
-     data-exts="jpg,jpeg,png,webp"
-     data-dirs=".,images,assets,assets/images,../images,../assets,../assets/images,../../images,../../assets,../../assets/images">
-
-<script>
-(function () {
-  const img = document.getElementById('wimmel');
-  if (!img) return;                     // safety guard
+  if (!img) return;
 
   const base = img.getAttribute('data-name') || 'wimmelbild';
   const exts = (img.getAttribute('data-exts') || 'jpg,jpeg,png,webp').split(',');
@@ -144,41 +138,24 @@
 
   const names = base.includes('.') ? [base] : exts.flatMap(e => [base + '.' + e, base.toLowerCase() + '.' + e]);
   const candidates = [];
-  dirs.forEach(d => names.forEach(n => candidates.push((d === '.' ? '' : (d.replace(/\/?$/, '/') )) + n)));
+  dirs.forEach(d => names.forEach(n => candidates.push((d === '.' ? '' : d.replace(/\/?$/, '/') ) + n)));
 
-  (function tryNext(i=0){
+  (function tryNext(i = 0) {
     if (i >= candidates.length) {
-      console.warn('Kein Bild gefunden. Getestet:', candidates);
       img.insertAdjacentHTML('afterend',
         '<div style="margin:.6rem 0;padding:.6rem .8rem;border-radius:8px;background:#fee;color:#b91c1c;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,.12)">' +
-        'Bild nicht gefunden. Getestete Pfade:<br><small>'+candidates.join('<br>')+'</small></div>');
+        'Bild nicht gefunden. Getestete Pfade:<br><small>' + candidates.join('<br>') + '</small></div>');
       return;
     }
     const url = candidates[i];
     const test = new Image();
     test.onload  = () => { img.src = url; };
-    test.onerror = () => tryNext(i+1);
+    test.onerror = () => tryNext(i + 1);
     test.src = url;
   })();
 })();
 </script>
-
-        <!-- 🎯 Ziel-Hotspot (unsichtbar).  TOP/LEFT ggf. anpassen -->
-        <button class="hit" id="santa" style="top:62%; left:55%;" aria-label="Weihnachtsmann"></button>
-
-        <!-- ❌ Unsichtbare Ablenker -->
-        <button class="hit decoy" style="top:23%; left:18%;"></button>
-        <button class="hit decoy" style="top:26%; left:35%;"></button>
-        <button class="hit decoy" style="top:29%; left:63%;"></button>
-        <button class="hit decoy" style="top:40%; left:76%;"></button>
-        <button class="hit decoy" style="top:58%; left:25%;"></button>
-        <button class="hit decoy" style="top:66%; left:18%;"></button>
-        <button class="hit decoy" style="top:70%; left:36%;"></button>
-        <button class="hit decoy" style="top:74%; left:72%;"></button>
-        <button class="hit decoy" style="top:48%; left:50%;"></button>
-        <button class="hit decoy" style="top:33%; left:52%;"></button>
-        <button class="hit decoy" style="top:84%; left:42%;"></button>
-      </div>
+ 
     </div>
   </div>
 
