@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Adventskalender Tag 1 – Kreuzworträtsel</title>
+  <title>Adventskalender Tag 1 – Kreuzworträtsel (leicht)</title>
   <style>
     /* ---------------- Winter-Hintergrund mit Schneefall (CSS-only) ---------------- */
     html, body { height: 100%; }
@@ -26,7 +26,7 @@
     h1 { margin: 0; }
 
     .page {
-      max-width: 980px;
+      max-width: 1100px;
       margin: 2rem auto 3rem;
       padding: 1.25rem;
       position: relative; z-index: 2;
@@ -41,13 +41,8 @@
 
     /* Schneelayer */
     .snow-layer{
-      pointer-events:none;
-      position:fixed;
-      inset:0;
-      z-index:1;
-      --c1: rgba(255,255,255,.95);
-      --c2: rgba(255,255,255,.75);
-      --c3: rgba(255,255,255,.55);
+      pointer-events:none; position:fixed; inset:0; z-index:1;
+      --c1: rgba(255,255,255,.95); --c2: rgba(255,255,255,.75); --c3: rgba(255,255,255,.55);
       background-image:
         radial-gradient(2px 2px at 20px 30px, var(--c1) 100%, transparent 0),
         radial-gradient(2px 2px at 130px 80px, var(--c1) 100%, transparent 0),
@@ -55,15 +50,11 @@
         radial-gradient(3px 3px at 200px 40px, var(--c2) 100%, transparent 0),
         radial-gradient(4px 4px at 40px 60px, var(--c3) 100%, transparent 0),
         radial-gradient(4px 4px at 160px 150px, var(--c3) 100%, transparent 0);
-      background-size: 300px 300px, 400px 400px, 500px 500px,
-                       600px 600px, 700px 700px, 800px 800px;
+      background-size: 300px 300px, 400px 400px, 500px 500px, 600px 600px, 700px 700px, 800px 800px;
       animation: snowLayer1 12s linear infinite;
     }
-    .snow-layer::before,
-    .snow-layer::after{
-      content:"";
-      position:fixed; inset:-10% 0 0 0;
-      pointer-events:none;
+    .snow-layer::before, .snow-layer::after{
+      content:""; position:fixed; inset:-10% 0 0 0; pointer-events:none;
     }
     .snow-layer::before{
       background-image:
@@ -73,8 +64,7 @@
         radial-gradient(3px 3px at 280px 60px, var(--c2) 100%, transparent 0),
         radial-gradient(4px 4px at 90px 140px, var(--c3) 100%, transparent 0),
         radial-gradient(4px 4px at 260px 240px, var(--c3) 100%, transparent 0);
-      background-size: 350px 350px, 450px 450px, 550px 550px,
-                       650px 650px, 750px 750px, 850px 850px;
+      background-size: 350px 350px, 450px 450px, 550px 550px, 650px 650px, 750px 750px, 850px 850px;
       animation: snowLayer2 18s linear infinite; opacity:.9;
     }
     .snow-layer::after{
@@ -85,97 +75,63 @@
         radial-gradient(3px 3px at 320px 30px, var(--c2) 100%, transparent 0),
         radial-gradient(4px 4px at 140px 130px, var(--c3) 100%, transparent 0),
         radial-gradient(4px 4px at 300px 220px, var(--c3) 100%, transparent 0);
-      background-size: 280px 280px, 380px 380px, 480px 480px,
-                       580px 580px, 680px 680px, 780px 780px;
+      background-size: 280px 280px, 380px 380px, 480px 480px, 580px 580px, 680px 680px, 780px 780px;
       animation: snowLayer3 24s linear infinite; opacity:.7;
     }
     @keyframes snowLayer1 { to { background-position: 0 600px, 0 400px, 0 500px, 0 600px, 0 700px, 0 800px; } }
     @keyframes snowLayer2 { to { background-position: 0 700px, 0 500px, 0 600px, 0 700px, 0 800px, 0 900px; } }
     @keyframes snowLayer3 { to { background-position: 0 800px, 0 600px, 0 700px, 0 800px, 0 900px, 0 1000px; } }
 
-    /* ---------------- Crossword Styles ---------------- */
-    .layout {
-      display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: 1.25rem;
-    }
-    @media (max-width: 980px) {
-      .layout { grid-template-columns: 1fr; }
-    }
+    /* --------------- Crossword Styles --------------- */
+    .layout { display:grid; grid-template-columns: 1fr 340px; gap: 1.25rem; }
+    @media (max-width: 1000px){ .layout{ grid-template-columns: 1fr; } }
+
     .grid {
-      --cell: 32px;
+      --cell: 30px; /* Handyfreundlich */
       display: grid;
-      grid-template-columns: repeat(19, var(--cell));
+      grid-template-columns: repeat(16, var(--cell));
       grid-auto-rows: var(--cell);
       gap: 2px;
       background: #cbd5e1;
       padding: 6px;
       border-radius: 12px;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,.05);
-      overflow: auto;
-      max-height: 70vh;
+      overflow: auto; max-height: 70vh;
     }
     .cell {
-      position: relative;
-      background: #fff;
-      border-radius: 4px;
-      display: grid;
-      place-items: center;
-      font-weight: 700;
+      position: relative; background:#fff; border-radius:4px;
+      display:grid; place-items:center; font-weight:700;
     }
-    .cell.block { background: #1f2937; }
-    .cell input {
-      width: 100%; height: 100%;
-      border: none; outline: none;
-      background: transparent;
-      text-transform: uppercase;
-      text-align: center;
-      font-size: 1rem;
-      font-weight: 700;
+    .cell.block{ background:#1f2937; }
+    .cell input{
+      width:100%; height:100%; border:none; outline:none; background:transparent;
+      text-transform:uppercase; text-align:center; font-size:1rem; font-weight:700;
     }
-    .num {
-      position: absolute;
-      top: 2px; left: 4px;
-      font-size: 10px;
-      color: #475569;
-      font-weight: 700;
-      user-select: none;
+    .num { position:absolute; top:2px; left:4px; font-size:10px; color:#475569; font-weight:700; user-select:none; }
+
+    .controls{ display:flex; gap:.5rem; flex-wrap:wrap; margin:.75rem 0 1.25rem; }
+    .btn{
+      border:none; background:linear-gradient(90deg, #22c55e, #16a34a); color:#fff;
+      padding:.6rem 1rem; border-radius:999px; cursor:pointer; box-shadow:0 8px 16px rgba(22,163,74,.25);
+      font-weight:700;
     }
-    .controls {
-      display: flex; gap: .5rem; flex-wrap: wrap; margin: .75rem 0 1.25rem;
+    .btn.sec{ background:#e11d48; box-shadow:0 8px 16px rgba(225,29,72,.25); }
+
+    .side{
+      background: rgba(255,255,255,.85);
+      border-radius:12px; padding:1rem; box-shadow: 0 4px 14px rgba(0,0,0,.08);
     }
-    .btn {
-      border: none;
-      background: linear-gradient(90deg, #22c55e, #16a34a);
-      color: #fff;
-      padding: .6rem 1rem;
-      border-radius: 999px;
-      cursor: pointer;
-      box-shadow: 0 8px 16px rgba(22,163,74,.25);
-      font-weight: 700;
+    .side h2{ margin:.25rem 0 .5rem; }
+    .side ul{ margin:.25rem 0 0 1.2rem; }
+    .side li{ margin:.2rem 0; }
+
+    .message { margin:.6rem 0; color:#e11d48; font-weight:700; }
+    .letter-box{ text-align:center; margin-top:.5rem; }
+    .letter{
+      display:inline-block; font-weight:900; font-size:clamp(2rem, 6vw, 3.5rem);
+      padding:.35rem 1rem; border-radius:14px; background:#0ea5e9; color:#fff; box-shadow:0 6px 14px rgba(14,165,233,.35);
     }
-    .btn.sec {
-      background: #e11d48;
-      box-shadow: 0 8px 16px rgba(225,29,72,.25);
-    }
-    .message { margin: .5rem 0; color: #e11d48; font-weight: 700; }
-    .clues h3 { margin: .5rem 0 .25rem; }
-    .clues ol { margin: 0 0 1rem 1.25rem; padding: 0; }
-    .clues li { margin: .25rem 0; }
-    .letter-box {
-      margin-top: 1rem; text-align: center;
-    }
-    .letter {
-      display: inline-block;
-      font-weight: 900;
-      font-size: clamp(2rem, 6vw, 3.5rem);
-      padding: .4rem 1.1rem;
-      border-radius: 14px;
-      background: #0ea5e9;
-      color: #fff;
-      box-shadow: 0 6px 14px rgba(14,165,233,.35);
-    }
-    a { color:#0ea5e9; }
+    a{ color:#0ea5e9; }
   </style>
 </head>
 <body>
@@ -188,6 +144,7 @@
   <div class="page">
     <div class="card">
       <div class="layout">
+        <!-- Linke Seite: Gitter -->
         <div>
           <div class="controls">
             <button class="btn" id="checkBtn">Überprüfen</button>
@@ -203,37 +160,29 @@
           </div>
         </div>
 
-        <div class="clues">
-          <h2>Weihnachten &amp; Adventszeit</h2>
-          <h3>Waagerecht</h3>
-          <ol id="across">
-            <li value="1">So wird die vierwöchige Zeit vor Weihnachten genannt</li>
-            <li value="4">Name der Nacht, in der Jesus geboren wurde (am 24. Dezember)</li>
-            <li value="5">Diese Frucht wird oft in einem Christstollen verwendet</li>
-            <li value="7">Bezeichnung des Kalenders, bei dem jeden Tag ein Türchen geöffnet wird</li>
-            <li value="9">Welche Farbe hat der Mantel des Weihnachtsmanns?</li>
-            <li value="11">In welchem Land wird der 26. Dezember „Boxing Day“ genannt?</li>
-            <li value="12">Dieses Weihnachtsgebäck wird oft mit Zuckerguss in Sternform dekoriert</li>
-            <li value="14">Diese Pflanze wird traditionell als Weihnachtsbaum verwendet</li>
-            <li value="15">Wie heißt der Mann, der laut der Bibel Marias Verlobter war?</li>
-            <li value="18">Dieses Tier war neben einem Ochsen bei der Geburt von Jesus im Stall anwesend</li>
-            <li value="19">Übersetzung von „Frohe Weihnachten“ auf Spanisch: „Feliz ….“?</li>
-          </ol>
-
-          <h3>Senkrecht</h3>
-          <ol id="down">
-            <li value="2">Name der Süßigkeit, die oft rot-weiß gestreift ist und am Weihnachtsbaum hängt</li>
-            <li value="3">Dieses Tier zog laut der Weihnachtsgeschichte den Schlitten des Weihnachtsmanns</li>
-            <li value="6">Dieses Gebäck wird oft aus Mandeln und Puderzucker in Form eines Halbmonds hergestellt</li>
-            <li value="8">Welche Herren brachten Jesus Gold, Weihrauch und Myrrhe? „Die Heiligen Drei …“?</li>
-            <li value="10">Was zündet man traditionell jeden Adventssonntag an?</li>
-            <li value="13">Name des Ortes, in dem Jesus geboren wurde</li>
-            <li value="16">Name des Engels, der Maria die Geburt Jesu ankündigte (laut Bibel)?</li>
-            <li value="17">Dieses Ereignis findet jährlich am 6. Dezember statt</li>
-            <li value="20">Wie nennt man die Darstellung der Geburt Jesu mit verschiedenen Figuren?</li>
-          </ol>
-        </div>
+        <!-- Rechte Seite: Wortliste -->
+        <aside class="side">
+          <h2>Diese Wörter sind versteckt:</h2>
+          <ul>
+            <li>WEIHNACHTSMARKT</li>
+            <li>SILVESTER</li>
+            <li>KOENIGE</li>
+            <li>SCHNEE</li>
+            <li>GLOCKEN</li>
+            <li>KUGELN</li>
+            <li>DEZEMBER</li>
+            <li>NIKOLAUS</li>
+            <li>WEIHNACHTSMANN</li>
+            <li>SCHLITTEN</li>
+            <li>ZIMT</li>
+            <li>RUDOLF</li>
+            <li>WEIHNACHTSLIEDER</li>
+            <li>TANNENBAUM</li>
+            <li>PLAETZCHEN</li>
+          </ul>
+        </aside>
       </div>
+
       <footer style="text-align:center; margin-top:1rem;">
         <a href="index.html">Zurück zum Kalender</a>
       </footer>
@@ -241,112 +190,92 @@
   </div>
 
   <script>
-    /* =========================================================
-       Kreuzworträtsel – statisches Layout mit allen 20 Lösungen
-       Hinweis: Umlaute als AE/OE/UE; keine Leerzeichen.
-       ========================================================= */
+    /* ============== Wörter (Großschrift, keine Leerzeichen) ============== */
+    const WORDS = {
+      1:  "KOENIGE",            // Horiz.
+      3:  "GLOCKEN",
+      6:  "NIKOLAUS",
+      8:  "PLAETZCHEN",
+      9:  "SCHNEE",
+      10: "DEZEMBER",
+      11: "SCHLITTEN",
 
-    // Lösungen (GROSSSCHRIFT, ohne Leerzeichen/Umlaute normalisiert)
-    const ANSWERS = {
-      1:  "ADVENTSZEIT",
-      2:  "ZUCKERSTANGE",
-      3:  "RENTIER",
-      4:  "HEILIGABEND",
-      5:  "ROSINEN",
-      6:  "VANILLEKIPFERL",
-      7:  "ADVENTSKALENDER",
-      8:  "KOENIGE",
-      9:  "ROT",
-      10: "ADVENTSKERZE",
-      11: "ENGLAND",
-      12: "ZIMTSTERNE",
-      13: "BETHLEHEM",
-      14: "TANNE",
-      15: "JOSEF",
-      16: "GABRIEL",
-      17: "NIKOLAUS",
-      18: "ESEL",
-      19: "NAVIDAD",
-      20: "KRIPPE"
+      2:  "TANNENBAUM",         // Vertik.
+      4:  "SILVESTER",
+      5:  "WEIHNACHTSMANN",
+      7:  "WEIHNACHTSMARKT",
+      12: "KUGELN",
+      13: "ZIMT",
+      14: "RUDOLF",
+      // (Bonus, optional querlaufend)
+      15: "WEIHNACHTSLIEDER"
     };
 
-    // --------- Layout (19 x 19): block = '#', sonst Leer = befüllbare Zelle
-    // Ich habe ein kompaktes, gut spielbares Gitter entworfen; Nummern folgen
-    // der klassischen Across/Down-Logik (nicht identisch zur PNG-Form).
-    const ROWS = 19, COLS = 19;
-    const EMPTY = "";
-    const BLOCK = "#";
-
-    // Wir bauen ein Raster und platzieren alle Worte mit festen Koordinaten.
-    // Jede Platzierung: { num, row, col, dir:'A'|'D', answer }
-    // dir A=Across (waagerecht), D=Down (senkrecht).
+    /* ============== Layout =================
+       Gittergröße & genaue Platzierungen (so angeordnet wie im Screenshot – falls ein Feld 1–2 Zellen abweicht, sag mir gern Bescheid und ich feintune es):
+       - row/col sind 1-basiert
+       - dir: 'A' (across = waagerecht), 'D' (down = senkrecht)
+    */
+    const ROWS = 16, COLS = 16;
     const PLACEMENTS = [
-      // Across
-      {num:1,  row:1,  col:1,  dir:'A', answer:ANSWERS[1]},   // ADVENTSZEIT (11) → passt in 1..11
-      {num:4,  row:3,  col:3,  dir:'A', answer:ANSWERS[4]},
-      {num:5,  row:5,  col:10, dir:'A', answer:ANSWERS[5]},
-      {num:7,  row:7,  col:2,  dir:'A', answer:ANSWERS[7]},
-      {num:9,  row:9,  col:2,  dir:'A', answer:ANSWERS[9]},
-      {num:11, row:11, col:1,  dir:'A', answer:ANSWERS[11]},
-      {num:12, row:11, col:9,  dir:'A', answer:ANSWERS[12]},
-      {num:14, row:13, col:3,  dir:'A', answer:ANSWERS[14]},
-      {num:15, row:15, col:5,  dir:'A', answer:ANSWERS[15]},
-      {num:18, row:17, col:1,  dir:'A', answer:ANSWERS[18]},
-      {num:19, row:17, col:7,  dir:'A', answer:ANSWERS[19]},
+      // Waagerecht (aus Bild abgeleitet)
+      {num:1,  row:2,  col:2,  dir:'A', answer:WORDS[1]},    // KOENIGE
+      {num:3,  row:3,  col:6,  dir:'A', answer:WORDS[3]},    // GLOCKEN
+      {num:6,  row:6,  col:2,  dir:'A', answer:WORDS[6]},    // NIKOLAUS
+      {num:8,  row:8,  col:7,  dir:'A', answer:WORDS[8]},    // PLAETZCHEN
+      {num:9,  row:10, col:3,  dir:'A', answer:WORDS[9]},    // SCHNEE
+      {num:10, row:11, col:2,  dir:'A', answer:WORDS[10]},   // DEZEMBER
+      {num:11, row:12, col:6,  dir:'A', answer:WORDS[11]},   // SCHLITTEN
+      // Optional quer: Weihnachtslieder (unten lang)
+      {num:15, row:15, col:4,  dir:'A', answer:WORDS[15]},   // WEIHNACHTSLIEDER
 
-      // Down
-      {num:2,  row:1,  col:5,  dir:'D', answer:ANSWERS[2]},
-      {num:3,  row:1,  col:11, dir:'D', answer:ANSWERS[3]},
-      {num:6,  row:1,  col:15, dir:'D', answer:ANSWERS[6]},
-      {num:8,  row:5,  col:4,  dir:'D', answer:ANSWERS[8]},
-      {num:10, row:5,  col:14, dir:'D', answer:ANSWERS[10]},
-      {num:13, row:7,  col:12, dir:'D', answer:ANSWERS[13]},
-      {num:16, row:9,  col:6,  dir:'D', answer:ANSWERS[16]},
-      {num:17, row:9,  col:16, dir:'D', answer:ANSWERS[17]},
-      {num:20, row:13, col:10, dir:'D', answer:ANSWERS[20]},
+      // Senkrecht
+      {num:2,  row:1,  col:4,  dir:'D', answer:WORDS[2]},    // TANNENBAUM
+      {num:4,  row:4,  col:9,  dir:'D', answer:WORDS[4]},    // SILVESTER
+      {num:5,  row:2,  col:12, dir:'D', answer:WORDS[5]},    // WEIHNACHTSMANN
+      {num:7,  row:5,  col:8,  dir:'D', answer:WORDS[7]},    // WEIHNACHTSMARKT
+      {num:12, row:7,  col:14, dir:'D', answer:WORDS[12]},   // KUGELN
+      {num:13, row:9,  col:6,  dir:'D', answer:WORDS[13]},   // ZIMT
+      {num:14, row:9,  col:12, dir:'D', answer:WORDS[14]},   // RUDOLF
     ];
 
-    // --- Hilfsfunktionen: Board initialisieren & Eingabefelder erzeugen
-    const board = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+    /* ======== Engine: Raster aufbauen, Eingabe prüfen ======== */
+    const ROW = () => Array(COLS).fill(null);
+    const board = Array.from({length: ROWS}, ROW);
 
-    function placeWords() {
-      for (const p of PLACEMENTS) {
+    function placeWords(){
+      for (const p of PLACEMENTS){
         const letters = p.answer.split("");
-        for (let i=0;i<letters.length;i++) {
+        for (let i=0;i<letters.length;i++){
           const r = p.row - 1 + (p.dir === 'D' ? i : 0);
           const c = p.col - 1 + (p.dir === 'A' ? i : 0);
-          if (!board[r][c]) board[r][c] = { char: letters[i], cells: [], num: null };
+          if (!board[r][c]) board[r][c] = { char: letters[i], input: null, num: null };
+          else board[r][c].char = letters[i];
         }
       }
-    }
-
-    function calculateNumbers() {
-      // Nummern an Startzellen setzen (Kreuzwort-Standard)
-      for (const p of PLACEMENTS) {
-        const r = p.row - 1;
-        const c = p.col - 1;
-        if (!board[r][c]) continue;
-        if (!board[r][c].num) board[r][c].num = p.num;
+      // Startnummern setzen
+      for (const p of PLACEMENTS){
+        const r = p.row - 1, c = p.col - 1;
+        if (board[r][c] && board[r][c].num == null) board[r][c].num = p.num;
       }
     }
 
-    function renderGrid() {
+    function renderGrid(){
       const grid = document.getElementById("grid");
       grid.innerHTML = "";
-      for (let r=0;r<ROWS;r++) {
-        for (let c=0;c<COLS;c++) {
+      for (let r=0;r<ROWS;r++){
+        for (let c=0;c<COLS;c++){
           const cell = document.createElement("div");
           cell.className = "cell";
           const item = board[r][c];
-          if (!item) {
+          if (!item){
             cell.classList.add("block");
           } else {
             const inp = document.createElement("input");
-            inp.setAttribute("maxlength","1");
-            inp.setAttribute("aria-label", `Zelle ${r+1},${c+1}`);
-            item.cells.push(inp);
+            inp.maxLength = 1;
+            item.input = inp;
             cell.appendChild(inp);
-            if (item.num) {
+            if (item.num){
               const num = document.createElement("div");
               num.className = "num";
               num.textContent = item.num;
@@ -358,48 +287,44 @@
       }
     }
 
-    function validate() {
-      const wrong = [];
-      for (const p of PLACEMENTS) {
-        for (let i=0;i<p.answer.length;i++) {
+    function validate(){
+      for (const p of PLACEMENTS){
+        for (let i=0;i<p.answer.length;i++){
           const r = p.row - 1 + (p.dir === 'D' ? i : 0);
           const c = p.col - 1 + (p.dir === 'A' ? i : 0);
           const item = board[r][c];
-          const val = (item.cells.at(-1).value || "").toUpperCase();
-          if (val !== p.answer[i]) {
-            wrong.push({r, c});
-          }
+          const val = (item.input.value || "").toUpperCase();
+          if (val !== p.answer[i]) return false;
         }
       }
-      return wrong;
+      return true;
     }
 
-    function clearAll() {
-      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
-        const item = board[r][c];
-        if (item && item.cells.length) item.cells.at(-1).value = "";
+    function clearAll(){
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const it = board[r][c];
+        if (it && it.input) it.input.value = "";
       }
       document.getElementById("msg").textContent = "";
       document.getElementById("letterBox").style.display = "none";
     }
 
-    // Initialisierung
     placeWords();
-    calculateNumbers();
     renderGrid();
 
     document.getElementById("checkBtn").addEventListener("click", () => {
-      const wrong = validate();
+      const ok = validate();
       const msg = document.getElementById("msg");
-      if (wrong.length) {
-        msg.textContent = "Leider ist mindestens ein Feld falsch oder leer. Versuch’s nochmal!";
+      if (!ok){
+        msg.textContent = "Mindestens ein Feld ist falsch oder leer. Versuch’s nochmal!";
       } else {
         msg.textContent = "";
         document.getElementById("letterBox").style.display = "block";
-        document.getElementById("letter").textContent = "E"; // ← Tagesbuchstabe
+        document.getElementById("letter").textContent = "E"; // ← Buchstabe des Tages
       }
     });
     document.getElementById("clearBtn").addEventListener("click", clearAll);
   </script>
 </body>
 </html>
+
