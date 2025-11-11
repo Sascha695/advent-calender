@@ -5,6 +5,14 @@
 <title>Adventskalender Tag 4</title>
 <link rel="stylesheet" href="style.css">
 <style>
+/* Hintergrundbild für die ganze Seite */
+body {
+  background: url('assets/classroom_elf.png') no-repeat center center fixed;
+  background-size: cover;
+  margin: 0;
+  font-family: sans-serif;
+}
+
 /* Vollbild-Weihnachtsmann-Nachricht */
 #santaMessage {
   position: fixed;
@@ -23,9 +31,6 @@
   backdrop-filter: blur(4px);
   animation: fadeIn 0.5s ease;
 }
-  body {
-    background-image: url('assets/classroom_elf.png'); /* HIER: Hintergrundbildpfad */
-  }
 
 #santaMessage button {
   margin-top: 2rem;
@@ -184,7 +189,7 @@ function checkQuiz() {
   }
 
   document.getElementById('quizFeedback').textContent = '';
-  showLetter('n');
+  showLetter('E');
 }
 
 function showLetter(letter) {
