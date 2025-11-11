@@ -7,23 +7,27 @@
 
   <style>
     /* ===== Variables (hier anpassen) ===== */
-    :root{
-      background: url('assets/lock.png'); /* Hintergrundbild */
-      --glass-opacity: 0.28;              /* 0..1: Transparenz der Karte */
-      --glass-blur: 14px;                 /* Unschärfe der Glas-Karte */
-      --card-max-width: 900px;            /* Max-Breite der Karte */
-      --accent: #1d9e57;                  /* Buttonfarbe */
-    }
+    /* ===== Variables (hier anpassen) ===== */
+     :root{
+      --bg-image: url('assets/lock.png');  /* <- Variable richtig setzen */
+      --glass-opacity: 0.28;
+      --glass-blur: 14px;
+      --card-max-width: 900px;
+      --accent: #1d9e57;
+      }
 
     /* ===== Seite mit Hintergrundbild ===== */
     html, body { height: 100%; }
     body{
       margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      
-      no-repeat center center fixed;
-      background-size: cover;
+
+      /* Hier korrekt: ein einziger background-Shorthand */
+      background: var(--bg-image) no-repeat center center fixed;
+      background-size: cover;        /* füllt den Bildschirm */
+      background-position: center 50px; /* schiebt das Bild 50px nach unten */
       color: #222;
+    }
       background-position: center 50px; /* 50 px weiter nach unten */
     }
 
