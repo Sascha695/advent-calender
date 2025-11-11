@@ -133,7 +133,7 @@ main.puzzle-container {
     </div>
 
     <div>
-      <p>7. „Heute ist der vierte Dezember. Wessen Gedenktag wird heute gefeiert?</p>
+      <p>7. „Heute ist der vierte Dezember. Wessen Gedenktag wird heute gefeiert? Ich bin gespannt, ob deine Mutter das weiß</p>
       <label><input type="radio" name="q7" value="Heilige Katharina"> Heilige Katharina</label><br>
       <label><input type="radio" name="q7" value="Heilige Lucia"> Heilige Lucia</label><br>
       <label><input type="radio" name="q7" value="Heilige Barbara"> Heilige Barbara</label><br>
@@ -148,12 +148,23 @@ main.puzzle-container {
       <label><input type="radio" name="q8" value="Man bringt den ertsten Christbaumschmuck an"> Man bringt den ertsten Christbaumschmuck an</label><br>
     </div>
 
+     <div>
      <p>9. „Wann wird in Spanien traditionell Weihnachten gefeiert?</p>
-      <label><input type="radio" name="q9" value="Am 24. Dezember"> Am 24.Dezember (Nochebuena)</label><br>
+      <label><input type="radio" name="q9" value="Am 24. Dezember"> Am 24.Dezember</label><br>
       <label><input type="radio" name="q9" value="Am 25. Dezember"> Am 25. Dezember</label><br>
       <label><input type="radio" name="q9" value="Am 6. Januar"> Am 6. Januar</label><br>
       <label><input type="radio" name="q9" value="Am 31. Dezember"> Am 31. Dezember </label><br>
     </div>
+
+    <div>
+     <p>10. „Welche Figur bringt in Italien die Geschenke zu Weihnachten?</p>
+      <label><input type="radio" name="q10" value="Babbo Natale"> Babbo Natale</label><br>
+      <label><input type="radio" name="q10" value="Santo Claus"> Santo Claus</label><br>
+      <label><input type="radio" name="q10" value="La Befana"> La Befana</label><br>
+      <label><input type="radio" name="q10" value="Il Bambino Gesù"> Il Bambino Gesù </label><br>
+    </div>
+
+    
 
     <button type="button" onclick="checkQuiz()">Überprüfen</button>
   </form>
@@ -205,7 +216,8 @@ function checkQuiz() {
     q6: 'Ebenezer Scrooge',
     q7: 'Heilige Barbara',
     q8: 'Man stellt den Zweig eines Obstbaumes ins Wasser, der bis Weihnachten Blühen soll',
-    q9: 'Am 6. Januar'
+    q9: 'Am 6. Januar',
+    q10: 'Il Bambino Gesù'
   };
 
   for (let key in answers) {
