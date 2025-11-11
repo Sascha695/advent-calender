@@ -4,11 +4,55 @@
   <meta charset="utf-8">
   <title>Adventskalender Tag 4</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Vollbild-Weihnachtsmann-Nachricht */
+    #santaMessage {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      color: gold;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 2rem;
+      font-weight: bold;
+      text-align: center;
+      z-index: 9999;
+      padding: 2rem;
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.5s ease;
+    }
+
+    #santaMessage button {
+      margin-top: 2rem;
+      font-size: 1.2rem;
+      background: #ff0000;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.8rem 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 0 10px #fff;
+      transition: transform 0.2s;
+    }
+
+    #santaMessage button:hover {
+      transform: scale(1.1);
+      background: #cc0000;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
 </head>
 <body>
   <header>
     <h1>Tag&nbsp;4 – Weihnachts-Quiz</h1>
   </header>
+
   <main class="puzzle-container">
     <p>Beantworte alle Fragen richtig, um den Buchstaben zu erhalten.</p>
 
@@ -56,15 +100,30 @@
   </footer>
 
   <script>
-    // Wenn jemand "Den Weihnachtsmann gibt es nicht" anklickt:
+    // Wenn jemand "Den Weihnachtsmann gibt es nicht" auswählt:
     document.getElementById('noSanta').addEventListener('change', () => {
       if (document.getElementById('noSanta').checked) {
-        const feedback = document.getElementById('quizFeedback');
-        feedback.style.color = 'gold';
-        feedback.textContent = 'Ho ho ho! Natürlich gibt es den Weihnachtsmann! 🎅✨';
+        showSantaMessage();
       }
     });
 
+    function showSantaMessage() {
+      const msg = document.createElement('div');
+      msg.id = 'santaMessage';
+      msg.innerHTML = `
+        🎅✨ <p>Ho ho ho! Natürlich gibt es den Weihnachtsmann!<br>
+        Wer bringt denn sonst die ganzen Geschenke? 😉</p>
+        <button onclick="closeSantaMessage()">Ich glaube jetzt an den Weihnachtsmann 🎁</button>
+      `;
+      document.body.appendChild(msg);
+    }
+
+    function closeSantaMessage() {
+      const msg = document.getElementById('santaMessage');
+      if (msg) msg.remove();
+    }
+
+    // --- Quiz Logik ---
     function checkQuiz() {
       const form = document.getElementById('quizForm');
       const answers = {
@@ -82,7 +141,6 @@
         }
       }
 
-      // Wenn alles richtig ist:
       document.getElementById('quizFeedback').textContent = '';
       showLetter('E');
     }
@@ -95,4 +153,5 @@
   </script>
 </body>
 </html>
+
 
