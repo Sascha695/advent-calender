@@ -241,42 +241,6 @@
           else if(val!==0){ cellDiv.classList.add('ok'); }
         }
       }
-       // 🎉 Konfetti-Effekt
-const confettiContainer = document.createElement('div');
-confettiContainer.style.position = 'fixed';
-confettiContainer.style.inset = '0';
-confettiContainer.style.overflow = 'hidden';
-confettiContainer.style.pointerEvents = 'none';
-confettiContainer.style.zIndex = '9999';
-document.body.appendChild(confettiContainer);
-
-for (let i = 0; i < 100; i++) {
-  const piece = document.createElement('div');
-  piece.style.position = 'absolute';
-  piece.style.top = '-10px';
-  piece.style.left = Math.random() * 100 + 'vw';
-  piece.style.width = '8px';
-  piece.style.height = '12px';
-  piece.style.background = `hsl(${Math.random() * 360}, 80%, 60%)`;
-  piece.style.opacity = Math.random();
-  piece.style.transform = `rotate(${Math.random() * 360}deg)`;
-  piece.style.animation = `fall ${3 + Math.random() * 3}s linear forwards`;
-  confettiContainer.appendChild(piece);
-}
-
-const style = document.createElement('style');
-style.textContent = `
-@keyframes fall {
-  to {
-    transform: translateY(110vh) rotate(720deg);
-    opacity: 0.8;
-  }
-}`;
-document.head.appendChild(style);
-
-// Entferne Konfetti nach 5 Sekunden
-setTimeout(() => confettiContainer.remove(), 5000);
-  });
 
 
       const msg=document.getElementById('sudokuMsg');
