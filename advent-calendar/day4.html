@@ -165,10 +165,16 @@ document.getElementById('noSanta').addEventListener('change', () => {
 function showSantaMessage() {
   const msg = document.createElement('div');
   msg.id = 'santaMessage';
-  msg.innerHTML = 🎅✨ <p>Ho ho ho! Natürlich gibt es den Weihnachtsmann!<br> Wer bringt denn sonst die ganzen Geschenke? 😉</p> <button onclick="closeSantaMessage()">Ich glaube jetzt an den Weihnachtsmann 🎁</button> ;
+  msg.innerHTML = `
+    <div style="font-size:3rem; line-height:1">🎅✨</div>
+    <p>Ho ho ho! Natürlich gibt es den Weihnachtsmann!<br>
+       Wer bringt denn sonst die ganzen Geschenke? 😉</p>
+    <button type="button" onclick="closeSantaMessage()">
+      Ich glaube jetzt an den Weihnachtsmann 🎁
+    </button>
+  `;
   document.body.appendChild(msg);
 }
-
 function closeSantaMessage() {
   const msg = document.getElementById('santaMessage');
   if (msg) msg.remove();
