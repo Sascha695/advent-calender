@@ -1,36 +1,30 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Wortsuppe – Weihnachten (Bildersuche)</title>
   <style>
-    :root{ --accent:#c54c3d; --found:#1d9e57; }
+    :root{ --accent:#c54c3d; --found:#12884b; } /* <- kräftigeres Grün */
 
     /* ========================
        === HINTERGRUNDBILD-KONFIG (Editierbar) ===
-       Passe diese Variablen an:
-         --bg-image:    URL zum Bild (oder 'none')
-         --bg-size:     Größe (z.B. 'contain', 'cover', '120%')
-         --bg-pos-x/y:  Position (z.B. '50%', '30%', 'left', '200px')
-         --bg-opacity:  Sichtbarkeit des Hintergrundbilds (0–1)
        ======================== */
     :root{
-      --bg-image: url('assets/buchstabensuppe.png'); /* ← eigene Datei einsetzen */
+      --bg-image: url('assets/buchstabensuppe.png');
       --bg-size:  cover;
       --bg-pos-x: 50%;
       --bg-pos-y: 50%;
-      --bg-opacity: 0.8; /* 0 = unsichtbar, 1 = voll sichtbar */
+      --bg-opacity: 0.8;
     }
 
     html,body{height:100%}
     body{
       margin:0; background:#f7efe6; color:#222;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      position:relative; /* für das Pseudo-Element */
+      position:relative;
     }
 
-    /* Legt das frei positionier-/skalierbare Hintergrundbild unter den Inhalt */
     body::before{
       content:"";
       position:fixed; inset:0;
@@ -42,7 +36,6 @@
       z-index:0; pointer-events:none;
     }
 
-    /* Inhalt über dem Hintergrundbild */
     header, main{ position:relative; z-index:1; }
 
     header{ text-align:center; background:#c54c3d; color:#fff; padding:1rem .75rem; }
@@ -71,15 +64,35 @@
       font:700 1.05rem/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       background:#fff8ee; position:relative;
       box-shadow: inset 0 1px 0 rgba(0,0,0,.25), inset 1px 0 0 rgba(0,0,0,.25);
-      transition: background .12s ease, box-shadow .12s ease, transform .12s ease, font-size .12s ease;
+      transition: background .12s ease, box-shadow .12s ease, transform .12s ease, font-size .12s ease, color .12s ease, text-shadow .12s ease;
     }
 
-    .cell.locked{ background:#e8fbf0; }
+    /* >>> Deutlichere Markierung für gefundene Wörter <<< */
+    .cell.locked{
+      background: var(--found);
+      color:#fff;
+      font-weight:900;
+      text-shadow:0 1px 0 rgba(0,0,0,.25);
+      box-shadow:
+        inset 0 0 0 2px rgba(0,0,0,.18),
+        0 0 0 3px rgba(18,136,75,.28);
+      transform: scale(1.02);
+      z-index:1;
+      font-size:1.15rem;
+    }
 
-    /* Deutlichere Hervorhebung auf Touch-Geräten */
+    @media (prefers-reduced-motion:no-preference){
+      .cell.locked{ animation: foundPop .3s ease-out; }
+      @keyframes foundPop{
+        0%{ transform:scale(1.08); }
+        100%{ transform:scale(1.02); }
+      }
+    }
+
+    /* Auswahl/Vorschau */
     .cell.preview{
-      background:#ffd9cc;                 
-      box-shadow: inset 0 0 0 2px #ff936f; 
+      background:#ffd9cc;
+      box-shadow: inset 0 0 0 2px #ff936f;
     }
     .cell.current{
       background:#ffbe9f;
@@ -96,6 +109,7 @@
       .cell{ font-size:1.2rem; }
       .cell.preview{ font-size:1.25rem; }
       .cell.current{ font-size:1.35rem; }
+      .cell.locked{ font-size:1.3rem; }
     }
 
     /* Bilder-Tafel */
@@ -117,8 +131,6 @@
       display:block;
       transition: filter .2s ease, transform .2s ease;
     }
-
-    /* Bildunterschriften AUSBLENDEN */
     .pic .cap{ display:none !important; }
 
     .pic.found img{ filter: grayscale(1) brightness(0.9); transform: scale(0.96); }
@@ -143,12 +155,10 @@
 
   <main>
     <div class="wrap">
-      <!-- ZUERST das Buchstabengitter -->
       <section class="card">
         <div id="grid" class="grid" aria-label="Wortsuppe"></div>
       </section>
 
-      <!-- DANN die Bilderliste -->
       <section class="card pics">
         <h2>Finde diese Bilder im Gitter</h2>
         <div class="hint">Nur <b>von links nach rechts</b> und <b>von oben nach unten</b> wischen.</div>
@@ -240,14 +250,12 @@
         const box=document.createElement('div');
         box.className='pic';box.id='pic_'+it.word;
         const img=document.createElement('img');
-        img.src=it.src;img.alt=it.word; // Alt-Text bleibt für Screenreader
+        img.src=it.src;img.alt=it.word;
         box.appendChild(img);
-        // *** KEINE Bildunterschrift/kein Wort mehr sichtbar ***
         picGridEl.appendChild(box);
       }
     }
 
-    /* Pointer Events mit Hervorhebung und Haptik */
     let selecting=false,startCell=null,previewEls=[],activePointerId=null,currentEl=null;
     function cellFromPoint(x,y){
       const el=document.elementFromPoint(x,y);
@@ -334,4 +342,3 @@
   </script>
 </body>
 </html>
-
