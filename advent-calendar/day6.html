@@ -41,8 +41,7 @@
     padding:6px; border-radius:14px; background:rgba(255,255,255,.65);
     box-shadow:0 10px 28px rgba(0,0,0,.18), inset 0 0 0 2px var(--grid-outline);
     max-width:100vw;
-    /* mehr Platz fürs Grid auf dem Handy */
-    max-height:calc(100vh - 220px);
+    max-height:calc(100vh - 220px); /* mehr Platz fürs Grid auf dem Handy */
     overflow:auto;
   }
 
@@ -51,9 +50,10 @@
     grid-template-columns:repeat(var(--cols), var(--cell));
     grid-auto-rows:var(--cell);
     gap:var(--gap);
-    touch-action:none;
+    /* Wichtig: Vertikales Page-Scroll zulassen */
+    touch-action: pan-y;
     outline:2px solid var(--grid-outline);
-    outline-offset:4px;            /* etwas kompakter */
+    outline-offset:4px;
     background:#fafafaAA; border-radius:10px;
     isolation:isolate;
   }
@@ -125,7 +125,7 @@
 
 <header>
   <h1>6. Dezember – Nikolaus im harten Labyrinth</h1>
-  <div class="sub">Kompakter, langer Weg, viele Sackgassen. Außenwald bleibt sichtbar.</div>
+  <div class="sub">Langer Umweg ums Haus, viele Sackgassen. Außenwald bleibt sichtbar.</div>
 </header>
 
 <main class="wrap">
@@ -149,6 +149,7 @@
   <div class="win" id="win">Geschafft! Merke dir den Buchstaben: <strong id="letter">N</strong></div>
 </main>
 
+<footer><p><a href="index.html">Zurück zum Kalender</a></p></footer>
 
 <script>
 /* ==== Bilder ==== */
@@ -162,7 +163,7 @@ if (backgroundImageURL){
 
 /* ==== Parameter ==== */
 const FOREST=2, WALL=1, PATH=0;
-/* kleineres Feld -> passt besser aufs Handy */
+/* handygerecht, aber knifflig */
 const SIZE = 29;
 let GRID = 0;
 let grid, position, goal;
@@ -203,39 +204,42 @@ function generateAndDraw(){
   GRID = SIZE + 2; // + äußerer Wald-Ring
   document.documentElement.style.setProperty('--cols', String(GRID));
 
-  const carve = buildMazeComplex(SIZE); // 1) Maze
+  let carve = buildMazeComplex(SIZE); // 1) Maze
   const mid = { r: Math.floor(SIZE/2), c: Math.floor(SIZE/2) };
 
-  // 2) Eingang oben finden (max Distanz zur Mitte)
+  // 2) Moat um die Mitte mit südlichem Tor -> man muss "rumlaufen"
+  carve = addMoatAroundCenter(carve, mid, 'S');
+
+  // 3) Eingang oben finden (max Distanz zur Mitte)
   const dist = bfsDistances(carve, mid.r, mid.c);
   const bestEntranceColInner = argmaxTopEntrance(carve, dist);
   const entranceInner = { r: 1, c: bestEntranceColInner };
 
-  // 3) Kürzester Weg
+  // 4) Kürzester Weg (durch das Süd-Tor erzwungen)
   const solutionPath = shortestPath(carve, entranceInner, mid);
 
-  // 4) Mehr Sackgassen: höher & länger
+  // 5) Mehr Sackgassen: deutlich höher & länger + Neben-Sackgassen
   const pruned = pruneToSolutionWithDecoys(
     carve,
     solutionPath,
-    { decoyChance: 0.24, decoyMaxLen: 6 }
+    { decoyChance: 0.33, decoyMaxLen: 8, sideBranchChance: 0.35, sideBranchMaxLen: 4 }
   );
 
-  // 5) Großes Grid + Start/Ziel
+  // 6) Großes Grid + Start/Ziel
   const entranceColBig = bestEntranceColInner + 1;
   ({grid, position, goal} = buildBigGrid(pruned, entranceColBig));
 
-  // 6) Sichtbarkeit initialisieren
+  // 7) Sichtbarkeit initialisieren
   visited = new Set();
   visited.add(`${position.r},${position.c}`);
 
-  // 7) Render
+  // 8) Render
   fitCellSize(true);
   draw();
   attachControls();
 }
 
-/* === Generator === */
+/* === Generator (DFS, kurvenlastig) === */
 function buildMazeComplex(n){
   if (n % 2 === 0) n -= 1;
   const rows=n, cols=n;
@@ -270,8 +274,8 @@ function buildMazeComplex(n){
     } else { stack.pop(); last=-1; }
   }
 
-  // zusätzliche Sackgassen
-  const spurChance = 0.42;
+  // zusätzliche Sackgassen im Rohmaze
+  const spurChance = 0.45;
   for (let rr=1; rr<rows-1; rr++){
     for (let cc=1; cc<cols-1; cc++){
       if (carve[rr][cc]!==PATH || Math.random()>=spurChance) continue;
@@ -283,15 +287,34 @@ function buildMazeComplex(n){
         if (!(a2>0&&b2>0&&a2<rows-1&&b2<cols-1)) continue;
         if (carve[a1][b1]===WALL && carve[a2][b2]===WALL){
           carve[a1][b1]=PATH;
-          if (Math.random()<0.85){ carve[a2][b2]=PATH;
+          if (Math.random()<0.9){ carve[a2][b2]=PATH;
             const a3=a2+dr/2, b3=b2+dc/2;
-            if (Math.random()<0.35 && a3>0&&b3>0&&a3<rows-1&&b3<cols-1 && carve[a3][b3]===WALL){ carve[a3][b3]=PATH; }
+            if (Math.random()<0.4 && a3>0&&b3>0&&a3<rows-1&&b3<cols-1 && carve[a3][b3]===WALL){ carve[a3][b3]=PATH; }
           }
           break;
         }
       }
     }
   }
+  return carve;
+}
+
+/* Moat (Wallgraben) um die Mitte mit Tor in gateDir ('N','S','E','W') */
+function addMoatAroundCenter(carve, center, gateDir='S'){
+  const R=carve.length, C=carve[0].length;
+  const inB=(r,c)=> r>=0 && c>=0 && r<R && c<C;
+  const ring = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+  // ring zu Wänden machen
+  for (const [dr,dc] of ring){
+    const rr=center.r+dr, cc=center.c+dc;
+    if (inB(rr,cc)) carve[rr][cc]=WALL;
+  }
+  // Tor öffnen
+  const gates = {N:[-1,0],S:[1,0],E:[0,1],W:[0,-1]};
+  const [gr, gc] = [center.r + gates[gateDir][0], center.c + gates[gateDir][1]];
+  if (inB(gr,gc)) carve[gr][gc]=PATH;
+  // Zielzelle selbst begehbar lassen
+  if (inB(center.r, center.c)) carve[center.r][center.c]=PATH;
   return carve;
 }
 
@@ -333,8 +356,12 @@ function shortestPath(carve, start, goal){
   return path;
 }
 
-/* Prune: Lösungspfad + viele/längere Decoys */
-function pruneToSolutionWithDecoys(carve, pathSet, {decoyChance=0.24, decoyMaxLen=6}={}){
+/* Prune: Lösungspfad + viele/längere Decoys + Nebenäste */
+function pruneToSolutionWithDecoys(
+  carve,
+  pathSet,
+  {decoyChance=0.33, decoyMaxLen=8, sideBranchChance=0.35, sideBranchMaxLen=4}={}
+){
   const R=carve.length, C=carve[0].length;
   const isPath = (r,c)=> pathSet.has(`${r},${c}`);
 
@@ -346,18 +373,32 @@ function pruneToSolutionWithDecoys(carve, pathSet, {decoyChance=0.24, decoyMaxLe
   }
 
   // 2) Entlang des Lösungspfads Sackgassen wachsen lassen
-  const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+  const DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
+  function growLine(sr,sc,dr,dc,maxLen){
+    let pr=sr, pc=sc, len = 1 + Math.floor(Math.random()*maxLen);
+    while (len>0 && pr>0 && pc>0 && pr<R-1 && pc<C-1 && carve[pr][pc]===WALL){
+      carve[pr][pc]=PATH;
+      // evtl. Nebenast abzweigen
+      if (sideBranchChance>0 && Math.random()<sideBranchChance){
+        const ortho = (dr===0) ? [[1,0],[-1,0]] : [[0,1],[0,-1]];
+        const [sdr,sdc] = ortho[Math.random()<0.5?0:1];
+        const sr2=pr+sdr, sc2=pc+sdc;
+        if (sr2>0 && sc2>0 && sr2<R-1 && sc2<C-1 && carve[sr2][sc2]===WALL){
+          growLine(sr2, sc2, sdr, sdc, sideBranchMaxLen);
+        }
+      }
+      pr+=dr; pc+=dc; len--;
+    }
+  }
+
   for (let r=1;r<R-1;r++){
     for (let c=1;c<C-1;c++){
       if (!isPath(r,c) || Math.random()>=decoyChance) continue;
-      const shuffled = dirs.slice().sort(()=>Math.random()-0.5);
+      const shuffled = DIRS.slice().sort(()=>Math.random()-0.5);
       for (const [dr,dc] of shuffled){
-        let pr=r+dr, pc=c+dc, len = 1 + Math.floor(Math.random()*decoyMaxLen);
-        if (pr<=0||pc<=0||pr>=R-1||pc>=C-1 || carve[pr][pc]!==WALL) continue;
-        while (len>0 && pr>0 && pc>0 && pr<R-1 && pc<C-1 && carve[pr][pc]===WALL){
-          carve[pr][pc]=PATH;
-          pr+=dr; pc+=dc; len--;
-        }
+        const nr=r+dr, nc=c+dc;
+        if (nr<=0||nc<=0||nr>=R-1||nc>=C-1 || carve[nr][nc]!==WALL) continue;
+        growLine(nr,nc,dr,dc,decoyMaxLen);
         break;
       }
     }
@@ -462,12 +503,10 @@ function draw(){
       // Fog-Logik
       if (fogEnabled){
         if (!seenEver[r][c]) {
-          // Forest NIE verdunkeln -> bleibt grün sichtbar
-          if (v !== FOREST) cell.classList.add('fog');
+          if (v !== FOREST) cell.classList.add('fog'); // Forest NIE verdunkeln
         } else if (fringeNow[r][c]) {
-          // nur Wege/Ziel grau dimmen, nicht Wände/Forest
           if (v===PATH || (r===goal.r && c===goal.c)){
-            cell.classList.add('dim');
+            cell.classList.add('dim'); // graue Vorschau im Sichtkegel
           }
         }
       }
@@ -543,30 +582,39 @@ function keyHandler(e){
   else if(['arrowright','d'].includes(k)) move(0,1);
 }
 
-/* Touch */
+/* Touch – vertikales Scrollen zulassen:
+   - Wir verhindern nur bei klaren Wischgesten (kurz & deutlich) das Scrollen
+   - Horizontaler Wisch -> bewegen; vertikaler Wisch -> Seite scrollt
+*/
 let sx=0, sy=0, st=0;
 const SWIPE_MIN=22, SWIPE_MAXT=600;
 function onTouchStart(e){
   if (!e.touches || e.touches.length!==1) return;
-  e.preventDefault();
   sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=Date.now();
 }
-function onTouchMove(e){ if (e.touches && e.touches.length===1) e.preventDefault(); }
+function onTouchMove(e){
+  // nichts verhindern -> pan-y bleibt aktiv
+}
 function onTouchEnd(e){
-  e.preventDefault();
   const dt=Date.now()-st; if(dt>SWIPE_MAXT) return;
   const t=e.changedTouches && e.changedTouches[0]; if(!t) return;
   const dx=t.clientX-sx, dy=t.clientY-sy;
   if (Math.max(Math.abs(dx),Math.abs(dy))<SWIPE_MIN) return;
-  if (Math.abs(dx)>Math.abs(dy)) move(0, dx>0?1:-1);
-  else move(dy>0?1:-1, 0);
+
+  // Nur wenn horizontale Geste dominiert, bewegen wir die Figur.
+  if (Math.abs(dx)>Math.abs(dy)){
+    if (dx>0) move(0, 1); else move(0, -1);
+    e.preventDefault(); // nur hier blocken, damit die Seite nicht mitscrollt
+  } else {
+    // vertikal -> Seite scrollt; keine Aktion
+  }
 }
 
 function attachControls(){
   detachControls();
   document.addEventListener('keydown', keyHandler);
-  mazeEl.addEventListener('touchstart', onTouchStart, {passive:false});
-  mazeEl.addEventListener('touchmove',  onTouchMove,  {passive:false});
+  mazeEl.addEventListener('touchstart', onTouchStart, {passive:true});
+  mazeEl.addEventListener('touchmove',  onTouchMove,  {passive:true});
   mazeEl.addEventListener('touchend',   onTouchEnd,   {passive:false});
   upBtn.onclick    = ()=>move(-1,0);
   downBtn.onclick  = ()=>move( 1,0);
@@ -582,6 +630,7 @@ function detachControls(){
 </script>
 </body>
 </html>
+
 
 
 
