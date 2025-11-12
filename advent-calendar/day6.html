@@ -197,232 +197,271 @@
   </main>
 
   <script>
-    const IMAGES = [
-      { word:"GESCHENK", src:"assets/gift.png"},
-      { word:"DREIKOENIGE", src:"assets/drei_koenige.png"},
-      { word:"NIKOLAUS", src:"assets/nikolaus.png"},
-      { word:"RENTIER", src:"assets/reindeer.png"},
-      { word:"SCHLITTEN", src:"assets/schlitten.png"},
-      { word:"KERZE", src:"assets/candle.png"},
-      { word:"TANNENBAUM", src:"assets/tree2.png"},
-      { word:"KRIPPE", src:"assets/krippe.png"},
-      { word:"STERN", src:"assets/stern.png"},
-      { word:"KEKSE", src:"assets/kekse.png"},
-      { word:"GLOCKEN", src:"assets/glocken.png"},
-      { word:"SCHNEEMANN", src:"assets/snowman2.png"}
-    ];
-    const WORDS = IMAGES.map(i=>i.word);
-    const SIZE = 15;
-    const FILL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const IMAGES = [
+    { word:"GESCHENK", src:"assets/gift.png"},
+    { word:"DREIKOENIGE", src:"assets/drei_koenige.png"},
+    { word:"NIKOLAUS", src:"assets/nikolaus.png"},
+    { word:"RENTIER", src:"assets/reindeer.png"},
+    { word:"SCHLITTEN", src:"assets/schlitten.png"},
+    { word:"KERZE", src:"assets/candle.png"},
+    { word:"TANNENBAUM", src:"assets/tree2.png"},
+    { word:"KRIPPE", src:"assets/krippe.png"},
+    { word:"STERN", src:"assets/stern.png"},
+    { word:"KEKSE", src:"assets/kekse.png"},
+    { word:"GLOCKEN", src:"assets/glocken.png"},
+    { word:"SCHNEEMANN", src:"assets/snowman2.png"}
+  ];
+  const WORDS = IMAGES.map(i=>i.word);
+  const SIZE = 15;
+  const FILL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    const gridEl = document.getElementById('grid');
-    const picGridEl = document.getElementById('picGrid');
-    const statusMsg = document.getElementById('statusMsg');
-    const resetBtn = document.getElementById('resetBtn');
+  const gridEl = document.getElementById('grid');
+  const picGridEl = document.getElementById('picGrid');
+  const statusMsg = document.getElementById('statusMsg');
+  const resetBtn = document.getElementById('resetBtn');
 
-    function emptyGrid(){return Array.from({length:SIZE},()=>Array(SIZE).fill(null));}
-    const DIRS=[[1,0],[0,1]];
+  function emptyGrid(){return Array.from({length:SIZE},()=>Array(SIZE).fill(null));}
+  const DIRS=[[1,0],[0,1]];
 
-    function tryPlace(grid,word){
-      for(let t=0;t<300;t++){
-        const [dx,dy]=DIRS[Math.floor(Math.random()*DIRS.length)];
-        const len=word.length;
-        const maxX=dx?SIZE-len:SIZE;
-        const maxY=dy?SIZE-len:SIZE;
-        const x0=Math.floor(Math.random()*maxX);
-        const y0=Math.floor(Math.random()*maxY);
-        let ok=true;
-        for(let i=0;i<len;i++){
-          const x=x0+dx*i,y=y0+dy*i;
-          const c=grid[y][x];
-          if(c&&c!==word[i]){ok=false;break;}
-        }
-        if(!ok)continue;
-        for(let i=0;i<len;i++){grid[y0+dy*i][x0+dx*i]=word[i];}
-        return true;
+  function tryPlace(grid,word){
+    for(let t=0;t<300;t++){
+      const [dx,dy]=DIRS[Math.floor(Math.random()*DIRS.length)];
+      const len=word.length;
+      const maxX=dx?SIZE-len:SIZE;
+      const maxY=dy?SIZE-len:SIZE;
+      const x0=Math.floor(Math.random()*maxX);
+      const y0=Math.floor(Math.random()*maxY);
+      let ok=true;
+      for(let i=0;i<len;i++){
+        const x=x0+dx*i,y=y0+dy*i;
+        const c=grid[y][x];
+        if(c&&c!==word[i]){ok=false;break;}
       }
-      return false;
+      if(!ok)continue;
+      for(let i=0;i<len;i++){grid[y0+dy*i][x0+dx*i]=word[i];}
+      return true;
     }
+    return false;
+  }
 
-    function buildGrid(words){
-      const grid=emptyGrid();
-      for(const w of words) tryPlace(grid,w.toUpperCase());
-      for(let y=0;y<SIZE;y++)
-        for(let x=0;x<SIZE;x++)
-          if(!grid[y][x]) grid[y][x]=FILL[Math.floor(Math.random()*FILL.length)];
-      return grid;
-    }
+  function buildGrid(words){
+    const grid=emptyGrid();
+    for(const w of words) tryPlace(grid,w.toUpperCase());
+    for(let y=0;y<SIZE;y++)
+      for(let x=0;x<SIZE;x++)
+        if(!grid[y][x]) grid[y][x]=FILL[Math.floor(Math.random()*FILL.length)];
+    return grid;
+  }
 
-    let data,foundWords,confettiShown=false;
+  let data,foundWords,confettiShown=false;
 
-    function renderGrid(){
-      gridEl.style.setProperty('--size',SIZE);
-      gridEl.innerHTML='';
-      for(let y=0;y<SIZE;y++){
-        for(let x=0;x<SIZE;x++){
-          const d=document.createElement('div');
-          d.className='cell';
-          d.dataset.x=x;d.dataset.y=y;
-          d.textContent=data[y][x];
-          gridEl.appendChild(d);
-        }
-      }
-    }
-
-    // Bilderanzeige mit Fehlerdiagnose
-    function renderPictures(){
-      picGridEl.innerHTML='';
-      for(const it of IMAGES){
-        const box=document.createElement('div');
-        box.className='pic'; box.id='pic_'+it.word;
-
-        const img=document.createElement('img');
-        img.src = it.src;
-        img.alt = it.word;
-
-        img.addEventListener('error', () => {
-          box.style.outline = '3px solid #c54c3d';
-          box.title = `Bild nicht gefunden: ${it.src}`;
-          box.innerHTML = `<span style="font:600 12px/1.2 system-ui; color:#c54c3d; text-align:center; padding:6px;">❌<br>${it.src}</span>`;
-        });
-        img.addEventListener('load', () => { box.title = it.src; });
-
-        box.appendChild(img);
-        picGridEl.appendChild(box);
+  function renderGrid(){
+    gridEl.style.setProperty('--size',SIZE);
+    gridEl.innerHTML='';
+    for(let y=0;y<SIZE;y++){
+      for(let x=0;x<SIZE;x++){
+        const d=document.createElement('div');
+        d.className='cell';
+        d.dataset.x=x;d.dataset.y=y;
+        d.textContent=data[y][x];
+        gridEl.appendChild(d);
       }
     }
+  }
 
-    // ====== Konfetti (Buchstaben) ======
-    function startLetterConfetti(count=180, duration=8000){
-      if(confettiShown) return; // nur einmal
-      confettiShown = true;
+  // Bilderanzeige mit Fehlerdiagnose
+  function renderPictures(){
+    picGridEl.innerHTML='';
+    for(const it of IMAGES){
+      const box=document.createElement('div');
+      box.className='pic'; box.id='pic_'+it.word;
 
-      const layer = document.createElement('div');
-      layer.className = 'confetti-layer';
-      document.body.appendChild(layer);
+      const img=document.createElement('img');
+      img.src = it.src;
+      img.alt = it.word;
 
-      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ";
-      const colors  = ["#c54c3d","#12884b","#e0a100","#1976d2","#9c27b0","#ff6f00","#00897b"];
+      img.addEventListener('error', () => {
+        box.style.outline = '3px solid #c54c3d';
+        box.title = `Bild nicht gefunden: ${it.src}`;
+        box.innerHTML = `<span style="font:600 12px/1.2 system-ui; color:#c54c3d; text-align:center; padding:6px;">❌<br>${it.src}</span>`;
+      });
+      img.addEventListener('load', () => { box.title = it.src; });
 
-      for(let i=0;i<count;i++){
-        const s = document.createElement('span');
-        s.className = 'confetti-letter';
-        s.textContent = letters[Math.floor(Math.random()*letters.length)];
+      box.appendChild(img);
+      picGridEl.appendChild(box);
+    }
+  }
 
-        // Zufallswerte über CSS-Variablen
-        const left = Math.random()*100;             // Start-Position in %
-        const drift = (Math.random()*200-100)+"px"; // seitlicher Drift
-        const size = 14 + Math.random()*22;         // px
-        const rot0 = Math.floor(Math.random()*360)+"deg";
-        const rot1 = Math.floor(Math.random()*720+360)+"deg";
-        const delay = Math.random()*0.8;            // s
-        const time = 6 + Math.random()*6;           // s
+  // ====== Konfetti (Buchstaben) ======
+  function startLetterConfetti(count=180, duration=8000){
+    if(confettiShown) return; // nur einmal
+    confettiShown = true;
 
-        s.style.left = left+"vw";
-        s.style.setProperty('--x', '0px');
-        s.style.setProperty('--drift', drift);
-        s.style.setProperty('--r0', rot0);
-        s.style.setProperty('--r1', rot1);
-        s.style.fontSize = size+"px";
-        s.style.color = colors[Math.floor(Math.random()*colors.length)];
-        s.style.animationDuration = `${time}s, ${time*0.9}s`;
-        s.style.animationDelay = `${delay}s, ${delay}s`;
+    const layer = document.createElement('div');
+    layer.className = 'confetti-layer';
+    document.body.appendChild(layer);
 
-        layer.appendChild(s);
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ";
+    const colors  = ["#c54c3d","#12884b","#e0a100","#1976d2","#9c27b0","#ff6f00","#00897b"];
+
+    for(let i=0;i<count;i++){
+      const s = document.createElement('span');
+      s.className = 'confetti-letter';
+      s.textContent = letters[Math.floor(Math.random()*letters.length)];
+
+      const left = Math.random()*100;
+      const drift = (Math.random()*200-100)+"px";
+      const size = 14 + Math.random()*22;
+      const rot0 = Math.floor(Math.random()*360)+"deg";
+      const rot1 = Math.floor(Math.random()*720+360)+"deg";
+      const delay = Math.random()*0.8;
+      const time = 6 + Math.random()*6;
+
+      s.style.left = left+"vw";
+      s.style.setProperty('--x', '0px');
+      s.style.setProperty('--drift', drift);
+      s.style.setProperty('--r0', rot0);
+      s.style.setProperty('--r1', rot1);
+      s.style.fontSize = size+"px";
+      s.style.color = colors[Math.floor(Math.random()*colors.length)];
+      s.style.animationDuration = `${time}s, ${time*0.9}s`;
+      s.style.animationDelay = `${delay}s, ${delay}s`;
+
+      layer.appendChild(s);
+    }
+
+    setTimeout(()=>layer.remove(), duration);
+  }
+
+  /* ===== Touch-/Pointer-Logik mit "Snap"-Korridor ===== */
+  let selecting=false,startCell=null,previewEls=[],activePointerId=null,currentEl=null;
+  let axis=null; // 'h' (horizontal) | 'v' (vertikal) | null
+  const DIR_LOCK_THRESHOLD = 12; // px, ab wann wir die Wischrichtung fixieren
+
+  function clearPreview(){
+    previewEls.forEach(el=>el.classList.remove('preview'));
+    previewEls=[];
+    if(currentEl){currentEl.classList.remove('current');currentEl=null;}
+  }
+
+  function lineCells(x0,y0,x1,y1){
+    const dx=Math.sign(x1-x0),dy=Math.sign(y1-y0);
+    if((dx===1&&dy===0)||(dx===0&&dy===1)){
+      const out=[];let x=x0,y=y0;
+      while(true){out.push({x,y});if(x===x1&&y===y1)break;x+=dx;y+=dy;}
+      return out;
+    }
+    return [];
+  }
+  function lettersOf(cells){return cells.map(({x,y})=>data[y][x]).join('');}
+  function lockCells(cells){cells.forEach(({x,y})=>gridEl.children[y*SIZE+x].classList.add('locked'));}
+  function markFound(w){
+    foundWords.add(w);
+    document.getElementById('pic_'+w)?.classList.add('found');
+    statusMsg.textContent=`${foundWords.size}/${IMAGES.length} gefunden`;
+  }
+  function vibrate(ms){try{if(navigator.vibrate)navigator.vibrate(ms);}catch{}}
+
+  // Neu: Zelle per Projektion aus Pointer-Position berechnen (auch wenn der Finger neben dem Wort ist)
+  function projectedCellFromPointer(clientX, clientY){
+    const r = gridEl.getBoundingClientRect();
+    const cw = r.width / SIZE;
+    const ch = r.height / SIZE;
+
+    // Index aus Position ableiten (auch wenn leicht außerhalb -> clampen)
+    let gx = Math.floor((clientX - r.left) / cw);
+    let gy = Math.floor((clientY - r.top) / ch);
+    if(Number.isNaN(gx) || Number.isNaN(gy)){ return null; }
+    gx = Math.max(0, Math.min(SIZE-1, gx));
+    gy = Math.max(0, Math.min(SIZE-1, gy));
+
+    // Wenn Achse fixiert: auf Start-Zeile/Spalte projizieren
+    if(axis === 'h' && startCell){ gy = startCell.y; }
+    if(axis === 'v' && startCell){ gx = startCell.x; }
+
+    const el = gridEl.children[gy*SIZE+gx];
+    return {x:gx,y:gy,el};
+  }
+
+  function onDown(e){
+    if(e.button!==undefined&&e.button!==0)return;
+    const t=e.target.closest('.cell');if(!t)return;
+    startCell={x:+t.dataset.x,y:+t.dataset.y,el:t};
+    selecting=true;activePointerId=e.pointerId;
+    axis=null; // Richtung noch nicht fest
+    clearPreview();
+    t.classList.add('preview','current');
+    previewEls=[t];currentEl=t;
+    gridEl.setPointerCapture(activePointerId);
+    vibrate(8);
+    e.preventDefault();
+  }
+
+  function onMove(e){
+    if(!selecting||e.pointerId!==activePointerId)return;
+
+    // Richtung nach erstem spürbaren Move (~12px) festlegen
+    if(axis===null){
+      const dx = e.clientX - startCell.el.getBoundingClientRect().left - (startCell.el.offsetWidth/2);
+      const dy = e.clientY - startCell.el.getBoundingClientRect().top  - (startCell.el.offsetHeight/2);
+      const adx = Math.abs(dx), ady = Math.abs(dy);
+      if(adx>DIR_LOCK_THRESHOLD || ady>DIR_LOCK_THRESHOLD){
+        axis = adx > ady ? 'h' : 'v';
       }
-
-      // Aufräumen nach Ablauf
-      setTimeout(()=>layer.remove(), duration);
     }
 
-    /* Pointer Events */
-    let selecting=false,startCell=null,previewEls=[],activePointerId=null,currentEl=null;
-    function cellFromPoint(x,y){
-      const el=document.elementFromPoint(x,y);
-      const cell=el&&el.closest('.cell');
-      return cell?{x:+cell.dataset.x,y:+cell.dataset.y,el:cell}:null;
-    }
-    function clearPreview(){
-      previewEls.forEach(el=>el.classList.remove('preview'));
-      previewEls=[];
-      if(currentEl){currentEl.classList.remove('current');currentEl=null;}
-    }
-    function lineCells(x0,y0,x1,y1){
-      const dx=Math.sign(x1-x0),dy=Math.sign(y1-y0);
-      if((dx===1&&dy===0)||(dx===0&&dy===1)){
-        const out=[];let x=x0,y=y0;
-        while(true){out.push({x,y});if(x===x1&&y===y1)break;x+=dx;y+=dy;}
-        return out;
-      }
-      return [];
-    }
-    function lettersOf(cells){return cells.map(({x,y})=>data[y][x]).join('');}
-    function lockCells(cells){cells.forEach(({x,y})=>gridEl.children[y*SIZE+x].classList.add('locked'));}
-    function markFound(w){
-      foundWords.add(w);
-      document.getElementById('pic_'+w)?.classList.add('found');
-      statusMsg.textContent=`${foundWords.size}/${IMAGES.length} gefunden`;
-    }
-    function vibrate(ms){try{if(navigator.vibrate)navigator.vibrate(ms);}catch{}}
+    // Ziel-Zelle per Projektion bestimmen
+    let c = projectedCellFromPointer(e.clientX, e.clientY) || startCell;
 
-    function onDown(e){
-      if(e.button!==undefined&&e.button!==0)return;
-      const t=e.target.closest('.cell');if(!t)return;
-      startCell={x:+t.dataset.x,y:+t.dataset.y,el:t};
-      selecting=true;activePointerId=e.pointerId;
-      clearPreview();
-      t.classList.add('preview','current');
-      previewEls=[t];currentEl=t;
-      gridEl.setPointerCapture(activePointerId);
-      vibrate(8);
-      e.preventDefault();
+    // Vorschau aktualisieren
+    previewEls.forEach(el=>el.classList.remove('preview'));
+    previewEls=[];
+    const cells=lineCells(startCell.x,startCell.y,c.x,c.y);
+    for(const {x,y} of cells){
+      const el=gridEl.children[y*SIZE+x];
+      el.classList.add('preview');previewEls.push(el);
     }
-    function onMove(e){
-      if(!selecting||e.pointerId!==activePointerId)return;
-      const c=cellFromPoint(e.clientX,e.clientY)||startCell;
-      previewEls.forEach(el=>el.classList.remove('preview'));
-      previewEls=[];
-      const cells=lineCells(startCell.x,startCell.y,c.x,c.y);
-      for(const {x,y} of cells){
-        const el=gridEl.children[y*SIZE+x];
-        el.classList.add('preview');previewEls.push(el);
-      }
-      if(currentEl!==gridEl.children[c.y*SIZE+c.x]){
-        currentEl?.classList.remove('current');
-        currentEl=gridEl.children[c.y*SIZE+c.x];
-        currentEl.classList.add('current');
-      }
+    if(currentEl!==gridEl.children[c.y*SIZE+c.x]){
+      currentEl?.classList.remove('current');
+      currentEl=gridEl.children[c.y*SIZE+c.x];
+      currentEl.classList.add('current');
     }
-    function onUp(e){
-      if(!selecting||e.pointerId!==activePointerId)return;
-      const c=cellFromPoint(e.clientX,e.clientY)||startCell;
-      const cells=lineCells(startCell.x,startCell.y,c.x,c.y);
-      const sel=lettersOf(cells);
-      const match=WORDS.find(w=>!foundWords.has(w)&&w===sel);
-      if(match){lockCells(cells);markFound(match);vibrate(25);}    
-      clearPreview();selecting=false;gridEl.releasePointerCapture(activePointerId);
-      if(foundWords.size===IMAGES.length){
-        statusMsg.textContent='🎉 Alle Bilder gefunden!';
-        startLetterConfetti();  // <<< Konfetti starten
-      }
-    }
+  }
 
-    function addEvents(){
-      gridEl.addEventListener('pointerdown',onDown,{passive:false});
-      gridEl.addEventListener('pointermove',onMove,{passive:false});
-      gridEl.addEventListener('pointerup',onUp,{passive:false});
-      gridEl.addEventListener('pointercancel',onUp,{passive:false});
+  function onUp(e){
+    if(!selecting||e.pointerId!==activePointerId)return;
+    const c=projectedCellFromPointer(e.clientX,e.clientY)||startCell;
+    const cells=lineCells(startCell.x,startCell.y,c.x,c.y);
+    const sel=lettersOf(cells);
+    const match=WORDS.find(w=>!foundWords.has(w)&&w===sel);
+    if(match){lockCells(cells);markFound(match);vibrate(25);}
+    clearPreview();
+    selecting=false;
+    axis=null; // Reset für nächsten Zug
+    gridEl.releasePointerCapture(activePointerId);
+    if(foundWords.size===IMAGES.length){
+      statusMsg.textContent='🎉 Alle Bilder gefunden!';
+      startLetterConfetti();
     }
+  }
 
-    function init(){
-      data=buildGrid(WORDS);foundWords=new Set();
-      confettiShown=false;
-      renderGrid();renderPictures();
-      statusMsg.textContent=`0/${IMAGES.length} gefunden`;
-    }
+  function addEvents(){
+    gridEl.addEventListener('pointerdown',onDown,{passive:false});
+    gridEl.addEventListener('pointermove',onMove,{passive:false});
+    gridEl.addEventListener('pointerup',onUp,{passive:false});
+    gridEl.addEventListener('pointercancel',onUp,{passive:false});
+  }
 
-    resetBtn.addEventListener('click',init);
-    addEvents();init();
-  </script>
+  function init(){
+    data=buildGrid(WORDS);foundWords=new Set();
+    confettiShown=false;
+    renderGrid();renderPictures();
+    statusMsg.textContent=`0/${IMAGES.length} gefunden`;
+  }
+
+  resetBtn.addEventListener('click',init);
+  addEvents();init();
+</script>
+
 </body>
 </html>
