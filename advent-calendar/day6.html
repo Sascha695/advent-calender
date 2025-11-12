@@ -144,6 +144,35 @@
       padding:.6rem 1rem;border-radius:10px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);
     }
     .msg{ display:block; margin-top:.5rem; color:#333; font-weight:600; }
+
+    /* ===========================
+       KONFETTI (Buchstaben)
+       =========================== */
+    .confetti-layer{
+      position:fixed; inset:0; pointer-events:none; z-index:9999;
+      overflow:hidden;
+    }
+    .confetti-letter{
+      position:absolute; top:-10%;
+      will-change: transform, opacity;
+      font-weight:900;
+      text-shadow:0 1px 0 rgba(0,0,0,.25);
+      opacity:.95;
+      transform: translate3d(0,-100px,0) rotate(0deg);
+      animation-name: fall, spin;
+      animation-timing-function: linear, ease-in-out;
+      animation-fill-mode: forwards, none;
+    }
+    @keyframes fall{
+      0%   { transform:translate3d(var(--x,0), -8vh, 0) rotate(var(--r0,0deg)); }
+      100% { transform:translate3d(calc(var(--x,0) + var(--drift,0px)), 108vh, 0) rotate(var(--r1,360deg)); }
+    }
+    @keyframes spin{
+      0%,100% { }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .confetti-letter{ animation: none; top:auto; bottom:4vh; opacity:.7; }
+    }
   </style>
 </head>
 <body>
@@ -224,7 +253,7 @@
       return grid;
     }
 
-    let data,foundWords;
+    let data,foundWords,confettiShown=false;
 
     function renderGrid(){
       gridEl.style.setProperty('--size',SIZE);
@@ -240,9 +269,7 @@
       }
     }
 
-    // -----------------------------
     // Bilderanzeige mit Fehlerdiagnose
-    // -----------------------------
     function renderPictures(){
       picGridEl.innerHTML='';
       for(const it of IMAGES){
@@ -253,13 +280,11 @@
         img.src = it.src;
         img.alt = it.word;
 
-        // Wenn Bild nicht geladen werden kann, Hinweis anzeigen
         img.addEventListener('error', () => {
           box.style.outline = '3px solid #c54c3d';
           box.title = `Bild nicht gefunden: ${it.src}`;
           box.innerHTML = `<span style="font:600 12px/1.2 system-ui; color:#c54c3d; text-align:center; padding:6px;">❌<br>${it.src}</span>`;
         });
-
         img.addEventListener('load', () => { box.title = it.src; });
 
         box.appendChild(img);
@@ -267,6 +292,50 @@
       }
     }
 
+    // ====== Konfetti (Buchstaben) ======
+    function startLetterConfetti(count=180, duration=8000){
+      if(confettiShown) return; // nur einmal
+      confettiShown = true;
+
+      const layer = document.createElement('div');
+      layer.className = 'confetti-layer';
+      document.body.appendChild(layer);
+
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ";
+      const colors  = ["#c54c3d","#12884b","#e0a100","#1976d2","#9c27b0","#ff6f00","#00897b"];
+
+      for(let i=0;i<count;i++){
+        const s = document.createElement('span');
+        s.className = 'confetti-letter';
+        s.textContent = letters[Math.floor(Math.random()*letters.length)];
+
+        // Zufallswerte über CSS-Variablen
+        const left = Math.random()*100;             // Start-Position in %
+        const drift = (Math.random()*200-100)+"px"; // seitlicher Drift
+        const size = 14 + Math.random()*22;         // px
+        const rot0 = Math.floor(Math.random()*360)+"deg";
+        const rot1 = Math.floor(Math.random()*720+360)+"deg";
+        const delay = Math.random()*0.8;            // s
+        const time = 6 + Math.random()*6;           // s
+
+        s.style.left = left+"vw";
+        s.style.setProperty('--x', '0px');
+        s.style.setProperty('--drift', drift);
+        s.style.setProperty('--r0', rot0);
+        s.style.setProperty('--r1', rot1);
+        s.style.fontSize = size+"px";
+        s.style.color = colors[Math.floor(Math.random()*colors.length)];
+        s.style.animationDuration = `${time}s, ${time*0.9}s`;
+        s.style.animationDelay = `${delay}s, ${delay}s`;
+
+        layer.appendChild(s);
+      }
+
+      // Aufräumen nach Ablauf
+      setTimeout(()=>layer.remove(), duration);
+    }
+
+    /* Pointer Events */
     let selecting=false,startCell=null,previewEls=[],activePointerId=null,currentEl=null;
     function cellFromPoint(x,y){
       const el=document.elementFromPoint(x,y);
@@ -332,7 +401,10 @@
       const match=WORDS.find(w=>!foundWords.has(w)&&w===sel);
       if(match){lockCells(cells);markFound(match);vibrate(25);}    
       clearPreview();selecting=false;gridEl.releasePointerCapture(activePointerId);
-      if(foundWords.size===IMAGES.length)statusMsg.textContent='🎉 Alle Bilder gefunden!';
+      if(foundWords.size===IMAGES.length){
+        statusMsg.textContent='🎉 Alle Bilder gefunden!';
+        startLetterConfetti();  // <<< Konfetti starten
+      }
     }
 
     function addEvents(){
@@ -344,6 +416,7 @@
 
     function init(){
       data=buildGrid(WORDS);foundWords=new Set();
+      confettiShown=false;
       renderGrid();renderPictures();
       statusMsg.textContent=`0/${IMAGES.length} gefunden`;
     }
