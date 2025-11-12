@@ -50,6 +50,7 @@
     touch-action: pan-x pan-y;
     outline:2px solid var(--grid-outline); outline-offset:6px;
     background:#fafafaAA; border-radius:12px;
+    isolation:isolate; /* sorgt dafür, dass Overlays klar sichtbar bleiben */
   }
 
   .cell{
@@ -139,6 +140,9 @@ let grid, position, goal;
 let fogEnabled = true; // Sichtfeld standardmäßig an
 const FOG_RADIUS = 2;  // sichtbare Nachbarschaft (Chebyshev-Distanz)
 
+/* Sichtbarkeits-Speicher */
+let visited;
+
 const mazeEl   = document.getElementById('maze');
 const frameEl  = document.getElementById('frame');
 const regenBtn = document.getElementById('regen');
@@ -158,7 +162,7 @@ generateAndDraw();
 /* ==== Pipeline ==== */
 function generateAndDraw(){
   GRID = SIZE + 2; // + äußerer Wald-Ring
-  document.documentElement.style.setProperty('--cols', GRID);
+  document.documentElement.style.setProperty('--cols', String(GRID));
 
   const carve = buildMazeComplex(SIZE);           // 1) perfektes Maze + Spurs
   const mid = { r: Math.floor(SIZE/2), c: Math.floor(SIZE/2) };
@@ -171,7 +175,17 @@ function generateAndDraw(){
   // 3) Großes Grid bauen (mit Wald & bestem Eingang)
   ({grid, position, goal} = buildBigGrid(carve, entranceColBig));
 
-  fitCellSize(false);
+  // 4) Sichtbarkeit initialisieren & Startfeld als besucht markieren
+  visited = new Set();
+  visited.add(`${position.r},${position.c}`);
+
+  // 5) Größenberechnung & Render
+  fitCellSize(true);   // nur Größe
+  // Falls der sichtbare Bereich am Start < 1% aller Zellen ist, Fog für den ersten Frame deaktivieren:
+  const tmpSeen = computeVisibility();
+  if (percentVisible(tmpSeen) < 0.01) {
+    const prev = fogEnabled; fogEnabled = false; draw(); fogEnabled = prev;
+  }
   draw();
   attachControls();
 }
@@ -265,7 +279,7 @@ function argmaxTopEntrance(carve, dist){
   const C=carve[0].length;
   let bestC= Math.floor(C/2), bestD=-1;
   for(let c=1;c<C-1;c++){
-    if (carve[1][c]===PATH){ // erste begehbare Zeile
+    if (carve[1][c]===PATH){
       const d = dist[1][c];
       if (Number.isFinite(d) && d>bestD){ bestD=d; bestC=c; }
     }
@@ -361,13 +375,14 @@ function draw(){
 }
 
 /* Sichtfeld: Radius um Spieler + alles Betretene (persistente Sicht) */
-const visited = new Set();
 function computeVisibility(){
   const seen = Array.from({length:GRID},()=>Array(GRID).fill(false));
   // Persistenz: alles, was je besucht wurde, bleibt sichtbar
-  for (const key of visited){
-    const [r,c] = key.split(',').map(Number);
-    if (r>=0 && c>=0 && r<GRID && c<GRID) seen[r][c]=true;
+  if (visited){
+    for (const key of visited){
+      const [r,c] = key.split(',').map(Number);
+      if (r>=0 && c>=0 && r<GRID && c<GRID) seen[r][c]=true;
+    }
   }
   // aktueller Radius
   const R = position.r, C = position.c;
@@ -381,6 +396,12 @@ function computeVisibility(){
     }
   }
   return seen;
+}
+
+function percentVisible(seen){
+  let vis=0, total=GRID*GRID;
+  for (let r=0;r<GRID;r++) for (let c=0;c<GRID;c++) if (seen[r][c]) vis++;
+  return vis/total;
 }
 
 function focusPlayer(){
@@ -441,6 +462,7 @@ function detachControls(){
 </script>
 </body>
 </html>
+
 
 
 
