@@ -6,13 +6,14 @@
 <title>6. Dezember – Nikolaus im harten Labyrinth</title>
 <style>
   :root{
-    --cell: 24px;      /* per JS so, dass alles reinpasst */
-    --gap: 2px;        /* bei kleinen Zellen automatisch 1px */
-    --cols: 10;        /* wird per JS gesetzt */
-    --wall:#0f172a;    /* sehr dunkle Wände */
-    --path:#ffffff;    /* helle Wege */
-    --forest:#166534;  /* Wald außen */
-    --house:#ffd54f;   /* Ziel-Hintergrund */
+    --cell: 24px;
+    --gap: 2px;
+    --cols: 10;
+    --wall:#0f172a;     /* sehr dunkle Wände */
+    --path:#ffffff;     /* helle Wege (besucht) */
+    --path-dim:#cbd5e1; /* graue Wege (im Sichtkegel, aber noch unbesucht) */
+    --forest:#166534;   /* Außenwald */
+    --house:#ffd54f;    /* Ziel */
     --grid-outline:#00000033;
     --player-scale: 1.25;
     --goal-scale:   1.05;
@@ -39,7 +40,7 @@
   .frame{
     padding:8px; border-radius:16px; background:rgba(255,255,255,.65);
     box-shadow:0 10px 28px rgba(0,0,0,.18), inset 0 0 0 2px var(--grid-outline);
-    max-width:100vw; max-height:calc(100vh - 260px); overflow:auto; /* Backup */
+    max-width:100vw; max-height:calc(100vh - 260px); overflow:auto;
   }
 
   .maze{
@@ -47,7 +48,6 @@
     grid-template-columns:repeat(var(--cols), var(--cell));
     grid-auto-rows:var(--cell);
     gap:var(--gap);
-    /* Wichtig: Page-Scroll unterbinden, damit Wischen nur die Figur bewegt */
     touch-action: none;
     outline:2px solid var(--grid-outline); outline-offset:6px;
     background:#fafafaAA; border-radius:12px;
@@ -62,7 +62,8 @@
   }
 
   .wall{   background:var(--wall); }
-  .path{   background:var(--path); }
+  .path{   background:var(--path); }            /* besucht */
+  .path.dim{ background:var(--path-dim); }      /* im Sichtkegel, aber noch unbesucht */
   .forest{ background:var(--forest); }
 
   .goal{ background:var(--house); }
@@ -87,11 +88,11 @@
   /* Fog of War – ungesehene Zellen komplett verbergen */
   .fog{
     position:relative;
-    background:#0b1220 !important;   /* einheitlich dunkel */
-    box-shadow:none !important;       /* kein Grid-Umriss */
+    background:#0b1220 !important;
+    box-shadow:none !important;
   }
-  .fog::after{ display:none; }        /* keine halbtransparente Maske */
-  .fog > * { display:none !important; } /* Sprites/Emoji etc. verbergen */
+  .fog::after{ display:none; }
+  .fog > * { display:none !important; }
 
   .win{display:none; padding:10px 14px; background:#fff3cd; border:1px solid #ffe08a; border-radius:10px;}
 
@@ -121,11 +122,14 @@
 
 <header>
   <h1>6. Dezember – Nikolaus im harten Labyrinth</h1>
-  <div class="sub">Minimale Wege, Fog of War und extralanger Lösungsweg zur Mitte.</div>
+  <div class="sub">Langer Lösungsweg, viele Sackgassen, besserer Fog-of-War.</div>
 </header>
 
 <main class="wrap">
   <div class="bar">
+    <!-- Hinweis: Der Button zeigt den aktuellen Zustand;
+         Klick macht das Gegenteil. Wenn "AN" angezeigt wird, ist Fog an.
+         Beim Klick wird Fog AUS => alles sichtbar. -->
     <button id="regen">Neu erzeugen</button>
     <button id="fogToggle" class="toggle" aria-pressed="true">Sichtfeld: AN</button>
   </div>
@@ -148,28 +152,28 @@
 <footer><p><a href="index.html">Zurück zum Kalender</a></p></footer>
 
 <script>
-/* ==== Deine Bilder ==== */
-const backgroundImageURL = "assets/nikolaus_maps.png"; // besser: ohne Umlaute umbenennen
+/* ==== Bilder ==== */
+const backgroundImageURL = "assets/nikolaus_eichbühlstraße.png"; // ggf. auf '...eichbuehlstrasse.png' umbenennen
 const playerImageURL     = ""; // z.B. "assets/nikolaus.png"
 const goalImageURL       = ""; // z.B. "assets/gelbes-haus.png"
 if (backgroundImageURL){
-  // Umlaute/Leerzeichen sicher encoden
   const safeURL = encodeURI(backgroundImageURL);
   document.body.style.backgroundImage = `url('${safeURL}')`;
 }
 
 /* ==== Parameter ==== */
 const FOREST=2, WALL=1, PATH=0;
-const SIZE = 33;       // innen (NICHT größer)
+const SIZE = 33;       // Innenmaß
 let GRID = 0;
 let grid, position, goal;
 
-let fogEnabled = true; // Sichtfeld standardmäßig an
-const FOG_RADIUS = 2;  // sichtbare Nachbarschaft
+let fogEnabled = true;   // true = Fog aktiv (nur Sichtkegel sichtbar)
+const FOG_RADIUS = 2;    // Größe des Sichtkegels
 
 /* Sichtbarkeits-Speicher */
 let visited;
 
+/* DOM */
 const mazeEl   = document.getElementById('maze');
 const frameEl  = document.getElementById('frame');
 const regenBtn = document.getElementById('regen');
@@ -183,7 +187,9 @@ const rightBtn = document.querySelector('.right');
 
 regenBtn.addEventListener('click', generateAndDraw);
 fogBtn.addEventListener('click', () => {
-  fogEnabled = !fogEnabled; fogBtn.textContent = `Sichtfeld: ${fogEnabled ? 'AN' : 'AUS'}`;
+  // Toggle: AN -> AUS (alles sichtbar), AUS -> AN (Fog aktiv)
+  fogEnabled = !fogEnabled;
+  fogBtn.textContent = `Sichtfeld: ${fogEnabled ? 'AN' : 'AUS'}`;
   fogBtn.setAttribute('aria-pressed', String(fogEnabled));
   draw();
 });
@@ -197,33 +203,42 @@ function generateAndDraw(){
   GRID = SIZE + 2; // + äußerer Wald-Ring
   document.documentElement.style.setProperty('--cols', String(GRID));
 
-  const carve = buildMazeComplex(SIZE); // 1) perfektes Maze mit Kurven & Spurs
+  const carve = buildMazeComplex(SIZE); // 1) Maze mit Kurven & Spurs
   const mid = { r: Math.floor(SIZE/2), c: Math.floor(SIZE/2) };
 
-  // 2) Eingang so wählen, dass Distanz zum Zentrum maximal wird
+  // 2) Eingang oben finden (max Distanz zur Mitte => lange Lösung)
   const dist = bfsDistances(carve, mid.r, mid.c);
-  const bestEntranceColInner = argmaxTopEntrance(carve, dist); // 0..SIZE-1
+  const bestEntranceColInner = argmaxTopEntrance(carve, dist);
   const entranceInner = { r: 1, c: bestEntranceColInner };
 
-  // 3) Lösungsweg ermitteln (BFS-Kürzester) & alles andere hart wegprunen
+  // 3) Kürzesten Weg bestimmen
   const solutionPath = shortestPath(carve, entranceInner, mid);
-  const pruned = pruneToSolutionWithDecoys(carve, solutionPath, {decoyChance:0.06, decoyMaxLen:2});
 
-  // 4) Großes Grid bauen (mit Wald & bestem Eingang)
+  // 4) Hart prunen ABER: viel stärkere Decoys (mehr & länger) => komplizierter
+  const pruned = pruneToSolutionWithDecoys(
+    carve,
+    solutionPath,
+    {
+      decoyChance: 0.24, // vorher 0.06
+      decoyMaxLen: 6     // vorher 2
+    }
+  );
+
+  // 5) Großes Grid + Start/Ziel
   const entranceColBig = bestEntranceColInner + 1; // + Wald-Rand
   ({grid, position, goal} = buildBigGrid(pruned, entranceColBig));
 
-  // 5) Sichtbarkeit initialisieren & Startfeld als besucht markieren
+  // 6) Sichtbarkeit initialisieren
   visited = new Set();
   visited.add(`${position.r},${position.c}`);
 
-  // 6) Größenberechnung & Render
+  // 7) Render
   fitCellSize(true);
   draw();
   attachControls();
 }
 
-/* === Generator: wie gehabt (ohne Loops), damit's schwer bleibt === */
+/* === Generator: Maze ohne Zyklen, kurvenlastig === */
 function buildMazeComplex(n){
   if (n % 2 === 0) n -= 1;
   const rows=n, cols=n;
@@ -245,9 +260,10 @@ function buildMazeComplex(n){
       if (inBounds(nr,nc) && carve[nr][nc]===WALL) cand.push({i,nr,nc,mr:dr/2,mc:dc/2});
     }
     if (cand.length){
+      // Kurven bevorzugen, um Pfad zu verlängern
       cand.sort((a,b)=>{
         const aTurn=(a.i===last)?1:0, bTurn=(b.i===last)?1:0;
-        if (aTurn!==bTurn) return aTurn - bTurn; // Kurven bevorzugen
+        if (aTurn!==bTurn) return aTurn - bTurn;
         return Math.random()-0.5;
       });
       const p=cand[0];
@@ -257,8 +273,8 @@ function buildMazeComplex(n){
     } else { stack.pop(); last=-1; }
   }
 
-  // Spurs (Sackgassen) – bleiben, werden später evtl. weggeprunt
-  const spurChance = 0.35;
+  // Extra Spurs/Sackgassen im Rohmaze
+  const spurChance = 0.42; // höher für mehr Komplexität
   for (let rr=1; rr<rows-1; rr++){
     for (let cc=1; cc<cols-1; cc++){
       if (carve[rr][cc]!==PATH || Math.random()>=spurChance) continue;
@@ -270,9 +286,9 @@ function buildMazeComplex(n){
         if (!(a2>0&&b2>0&&a2<rows-1&&b2<cols-1)) continue;
         if (carve[a1][b1]===WALL && carve[a2][b2]===WALL){
           carve[a1][b1]=PATH;
-          if (Math.random()<0.8){ carve[a2][b2]=PATH;
+          if (Math.random()<0.85){ carve[a2][b2]=PATH;
             const a3=a2+dr/2, b3=b2+dc/2;
-            if (Math.random()<0.3 && a3>0&&b3>0&&a3<rows-1&&b3<cols-1 && carve[a3][b3]===WALL){ carve[a3][b3]=PATH; }
+            if (Math.random()<0.35 && a3>0&&b3>0&&a3<rows-1&&b3<cols-1 && carve[a3][b3]===WALL){ carve[a3][b3]=PATH; }
           }
           break;
         }
@@ -282,7 +298,7 @@ function buildMazeComplex(n){
   return carve;
 }
 
-/* ==== BFS-Distanzen, kürzester Pfad, Pruning ==== */
+/* ==== BFS-Distanzen, kürzester Pfad ==== */
 function bfsDistances(carve, sr, sc){
   const R=carve.length, C=carve[0].length;
   const dist=Array.from({length:R},()=>Array(C).fill(Infinity));
@@ -320,37 +336,34 @@ function shortestPath(carve, start, goal){
   return path;
 }
 
-/* Prune auf: nur Lösungspfad + wenige Mini-Decoys */
-function pruneToSolutionWithDecoys(carve, pathSet, {decoyChance=0.06, decoyMaxLen=2}={}){
+/* Prune: Lösungspfad + viele/längere Decoys => mehr Sackgassen */
+function pruneToSolutionWithDecoys(carve, pathSet, {decoyChance=0.24, decoyMaxLen=6}={}){
   const R=carve.length, C=carve[0].length;
   const isPath = (r,c)=> pathSet.has(`${r},${c}`);
-  // 1) alles außer Lösungspfad = Wand
+
+  // 1) Alles außer Lösungspfad zunächst zu Wänden machen
   for (let r=0;r<R;r++){
     for (let c=0;c<C;c++){
       if (carve[r][c]===PATH && !isPath(r,c)) carve[r][c]=WALL;
     }
   }
-  // 2) kleine Decoy-Stummel von Pfad abzweigen
+
+  // 2) Entlang des Lösungspfads viele und längere Sackgassen einziehen
   const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
   for (let r=1;r<R-1;r++){
     for (let c=1;c<C-1;c++){
       if (!isPath(r,c) || Math.random()>=decoyChance) continue;
       const shuffled = dirs.slice().sort(()=>Math.random()-0.5);
       for (const [dr,dc] of shuffled){
-        const a1=r+dr, b1=c+dc;
-        if (a1<=0||b1<=0||a1>=R-1||b1>=C-1) continue;
-        if (carve[a1][b1]===WALL){
-          carve[a1][b1]=PATH;
-          // Tiefe 2..decoyMaxLen
-          let len = 1 + Math.floor(Math.random()*decoyMaxLen);
-          let pr=a1, pc=b1;
-          while (len>1){
-            const nr=pr+dr, nc=pc+dc;
-            if (nr<=0||nc<=0||nr>=R-1||nc>=C-1 || carve[nr][nc]!==WALL) break;
-            carve[nr][nc]=PATH; pr=nr; pc=nc; len--;
-          }
-          break;
+        let pr=r+dr, pc=c+dc, len = 1 + Math.floor(Math.random()*decoyMaxLen);
+        // nur in Wand hinein wachsen
+        if (pr<=0||pc<=0||pr>=R-1||pc>=C-1 || carve[pr][pc]!==WALL) continue;
+        // wachse geradlinig und stoppe bei Kollision
+        while (len>0 && pr>0 && pc>0 && pr<R-1 && pc<C-1 && carve[pr][pc]===WALL){
+          carve[pr][pc]=PATH;
+          pr+=dr; pc+=dc; len--;
         }
+        break;
       }
     }
   }
@@ -415,13 +428,15 @@ function fitCellSize(onlySize){
 
 /* ==== Render (mit Fog) ==== */
 function draw(){
-  const seen = computeVisibility();
+  // sicht-Zustände berechnen
+  const { seenEver, fringeNow } = computeVisibilityStates();
   mazeEl.innerHTML = '';
   for (let r=0; r<GRID; r++){
     for (let c=0; c<GRID; c++){
       const cell = document.createElement('div');
       const v = grid[r][c];
 
+      // Grundtyp
       if (r===goal.r && c===goal.c){
         cell.className = 'cell goal';
         if (goalImageURL){
@@ -449,8 +464,21 @@ function draw(){
         cell.classList.add('player'); cell.tabIndex = 0; cell.appendChild(s);
       }
 
-      // Fog – ungesehene Zellen komplett abdecken
-      if (fogEnabled && !seen[r][c]) cell.classList.add('fog');
+      // Fog-Logik:
+      // - Fog AUS: alles sichtbar, nichts dimmen/verstecken
+      // - Fog AN:
+      //    - ungesehen -> komplett dunkel (fog)
+      //    - im Sichtkegel, aber unbesucht -> grau (dim) WENN Weg/Ziel
+      if (fogEnabled){
+        if (!seenEver[r][c]) {
+          cell.classList.add('fog');
+        } else if (fringeNow[r][c]) {
+          // nur Pfade/Gezieltes dimmen; Wände/Forest bleiben wie sind
+          if (v===PATH || (r===goal.r && c===goal.c)){
+            cell.classList.add('dim');
+          }
+        }
+      }
 
       mazeEl.appendChild(cell);
     }
@@ -458,26 +486,44 @@ function draw(){
   focusPlayer();
 }
 
-/* Sichtfeld */
-function computeVisibility(){
-  const seen = Array.from({length:GRID},()=>Array(GRID).fill(false));
+/* Sichtzustände:
+   - seenEver[r][c]  -> wurde schon mindestens einmal gesehen/betreten (visited oder im Sichtkegel)
+   - fringeNow[r][c] -> liegt JETZT im Sichtkegel, aber noch nicht besucht
+*/
+function computeVisibilityStates(){
+  // Basis: alles unsichtbar
+  const seenEver = Array.from({length:GRID},()=>Array(GRID).fill(false));
+  const fringeNow = Array.from({length:GRID},()=>Array(GRID).fill(false));
+
+  // Markiere alle je gesehenen Felder: besuchte Felder sind "seenEver"
   if (visited){
     for (const key of visited){
       const [r,c] = key.split(',').map(Number);
-      if (r>=0 && c>=0 && r<GRID && c<GRID) seen[r][c]=true;
+      if (r>=0 && c>=0 && r<GRID && c<GRID) seenEver[r][c]=true;
     }
   }
+
+  // Wenn Fog AUS, ist alles sichtbar (aber nicht als "fringe" markiert)
+  if (!fogEnabled){
+    for (let r=0;r<GRID;r++) for (let c=0;c<GRID;c++) seenEver[r][c]=true;
+    return { seenEver, fringeNow };
+  }
+
+  // Fog AN: Sichtkegel um Spieler
   const R = position.r, C = position.c;
   for (let r=R-FOG_RADIUS; r<=R+FOG_RADIUS; r++){
     for (let c=C-FOG_RADIUS; c<=C+FOG_RADIUS; c++){
       if (r>=0 && c>=0 && r<GRID && c<GRID){
         if (Math.max(Math.abs(r-R), Math.abs(c-C)) <= FOG_RADIUS){
-          seen[r][c]=true;
+          if (!visited.has(`${r},${c}`)){
+            fringeNow[r][c] = true;   // im Sichtkegel, aber unbesucht -> grau
+          }
+          seenEver[r][c] = true;      // jetzt gesehen zählt als gesehen
         }
       }
     }
   }
-  return seen;
+  return { seenEver, fringeNow };
 }
 
 function focusPlayer(){
@@ -548,6 +594,7 @@ function detachControls(){
 </script>
 </body>
 </html>
+
 
 
 
