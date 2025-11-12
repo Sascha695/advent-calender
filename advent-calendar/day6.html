@@ -15,6 +15,42 @@
         background:#e8f3ea;color:#111;background-size:cover;background-position:center;background-attachment:fixed; }
   .bg-overlay{ position:fixed; inset:0; pointer-events:none; background:linear-gradient(0deg, rgba(0,0,0,.16), rgba(0,0,0,.16)); z-index:-1; }
   header,footer{padding:10px 8px; text-align:center}
+  :root{
+  /* ... deine bestehenden Variablen ... */
+
+  /* ==== Hintergrundbild-Variablen (einfach hier ändern) ==== */
+  --bg-size: cover;            /* cover | contain | 1200px 800px | auto */
+  --bg-position: center center;/* z.B.: left top | right bottom | 50% 30% */
+  --bg-repeat: no-repeat;      /* no-repeat | repeat | repeat-x | repeat-y */
+  --bg-attachment: fixed;      /* fixed (parallax) | scroll (mit Inhalt)   */
+  --bg-overlay: rgba(0,0,0,.16);  /* Farbe/Transparenz des Overlays         */
+  --bg-filter: none;           /* z.B.: blur(2px) brightness(.95) contrast(1.1) */
+}
+
+/* body: bindet die Variablen ein */
+body{
+  margin:0;height:100%;
+  font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  color:#111;
+
+  /* Bildsteuerung – wird via JS mit URL befüllt (siehe unten) */
+  background-image: var(--bg-image, none);
+  background-size: var(--bg-size);
+  background-position: var(--bg-position);
+  background-repeat: var(--bg-repeat);
+  background-attachment: var(--bg-attachment);
+
+  /* optionaler Gesamteindruck fürs Bild */
+  filter: var(--bg-filter);
+}
+
+/* Overlay nimmt die Deckkraft/Farbe aus --bg-overlay */
+.bg-overlay{ 
+  position:fixed; inset:0; pointer-events:none; 
+  background: var(--bg-overlay);
+  z-index:-1;
+}
+
   h1{margin:0 0 6px; font-size:1.1rem}
   .sub{opacity:.9; font-size:.95rem}
   .intro{margin:8px auto 0; max-width:800px; padding:8px 10px; background:#fff; border:1px solid #dbe2ea; border-radius:10px; line-height:1.35;}
