@@ -9,7 +9,7 @@
     --cell: 22px;
     --gap: 2px;
     --cols: 10;
-    --wall:#0f172a;
+    --wall:#0f172a;     /* Wände */
     --path:#ffffff;     /* besuchte Wege */
     --path-dim:#cbd5e1; /* graue Wege (im Sichtkegel, unbesucht) */
     --forest:#166534;   /* Außenwald */
@@ -134,17 +134,15 @@
 </header>
 
 <main class="wrap">
-  <!-- Obere Leiste: nur Neu erzeugen -->
   <div class="bar">
     <button id="regen">Neu erzeugen</button>
   </div>
 
-  <!-- Spielfeld -->
   <div class="frame" id="frame">
     <div id="maze" class="maze" aria-label="Labyrinth" role="grid" tabindex="0"></div>
   </div>
 
-  <!-- Hinweis und Taschenlampen-Knopf UNTER dem Spielfeld -->
+  <!-- Hinweis + Taschenlampe unter dem Spielfeld -->
   <p class="hint">Falls es zu schwer ist, dann ist hier eine Taschenlampe:</p>
   <div class="bar">
     <button id="fogToggle" class="toggle" aria-pressed="false">Sichtfeld AN</button>
@@ -174,19 +172,55 @@ if (backgroundImageURL){
   document.body.style.backgroundImage = `url('${safeURL}')`;
 }
 
+/* ==== Schalter: eigenes 29x29-Level benutzen? ==== */
+const USE_LEVEL = false; // <-- auf true setzen, um LEVEL (unten) zu benutzen
+
+/* ==== 29×29-Level: 0 = Weg, 1 = Wand ====
+   Jede der 29 Zeilen muss 29 Einträge enthalten.
+   Beispiel (hier nur Demo!): */
+const LEVEL = [
+  /* Zeile 0  */ [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  /* Zeile 1  */ [1,0,0,0,1,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,0,0,1,0,0,1],
+  /* Zeile 2  */ [1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,0,1,0,1,0,1,1],
+  /* Zeile 3  */ [1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,0,1,0,0,0,0,1],
+  /* Zeile 4  */ [1,0,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,1,1,0,1],
+  /* Zeile 5  */ [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,1],
+  /* Zeile 6  */ [1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1],
+  /* Zeile 7  */ [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1,0,1],
+  /* Zeile 8  */ [1,0,1,1,1,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,0,1],
+  /* Zeile 9  */ [1,0,0,0,0,0,0,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,0,0,1,0,1],
+  /* Zeile 10 */ [1,1,1,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,1,1,0,1,0,1],
+  /* Zeile 11 */ [1,0,0,0,0,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1],
+  /* Zeile 12 */ [1,0,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,1,1,0,1,1,1,0,1],
+  /* Zeile 13 */ [1,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,1],
+  /* Zeile 14 */ [1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1],
+  /* Zeile 15 */ [1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+  /* Zeile 16 */ [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1],
+  /* Zeile 17 */ [1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+  /* Zeile 18 */ [1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1],
+  /* Zeile 19 */ [1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
+  /* Zeile 20 */ [1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,0,1],
+  /* Zeile 21 */ [1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+  /* Zeile 22 */ [1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1],
+  /* Zeile 23 */ [1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+  /* Zeile 24 */ [1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1],
+  /* Zeile 25 */ [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
+  /* Zeile 26 */ [1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,0,1],
+  /* Zeile 27 */ [1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+  /* Zeile 28 */ [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
 /* ==== Parameter ==== */
 const FOREST=2, WALL=1, PATH=0;
-const SIZE = 29;          /* handygerecht */
+const SIZE = 29;   // fix
 let GRID = 0;
 let grid, position, goal;
 
-/* Sichtfelder:
-   - lampOn = „Sichtfeld AN“ -> ALLES sichtbar (Fog komplett aus)
-   - lampOn = false          -> Fog aktiv mit Sichtkegel
-*/
-let lampOn = false;       // Button startet AUS (dann Fog aktiv)
+/* Taschenlampe: AN = ALLES sichtbar */
+let lampOn = false;
 const FOG_RADIUS = 2;
 
+/* Sichtbarkeits-Speicher */
 let visited;
 
 /* DOM */
@@ -194,24 +228,22 @@ const mazeEl   = document.getElementById('maze');
 const frameEl  = document.getElementById('frame');
 const regenBtn = document.getElementById('regen');
 const fogBtn   = document.getElementById('fogToggle');
-
-/* D-Pad Buttons */
 const upBtn    = document.querySelector('.up');
 const downBtn  = document.querySelector('.down');
 const leftBtn  = document.querySelector('.left');
 const rightBtn = document.querySelector('.right');
 
+/* Events */
 regenBtn.addEventListener('click', generateAndDraw);
 fogBtn.addEventListener('click', () => {
   lampOn = !lampOn;
-  // UI: Wenn AN -> kompletter Überblick
   fogBtn.textContent = lampOn ? 'Sichtfeld AUS' : 'Sichtfeld AN';
   fogBtn.setAttribute('aria-pressed', String(lampOn));
   draw();
 });
 window.addEventListener('resize', ()=>fitCellSize(true));
 
-/* ==== Init ==== */
+/* Init */
 generateAndDraw();
 
 /* ==== Pipeline ==== */
@@ -219,42 +251,69 @@ function generateAndDraw(){
   GRID = SIZE + 2; // + äußerer Wald-Ring
   document.documentElement.style.setProperty('--cols', String(GRID));
 
-  let carve = buildMazeComplex(SIZE); // 1) Maze
+  let carve;
+  if (USE_LEVEL && isValidLevel(LEVEL)) {
+    carve = copyLevel(LEVEL); // 0/1 -> direkt übernehmen
+  } else {
+    // Fallback: Generator wie zuvor (falls LEVEL fehlt/ungültig)
+    carve = buildMazeComplex(SIZE);
+  }
+
   const mid = { r: Math.floor(SIZE/2), c: Math.floor(SIZE/2) };
 
-  // 2) Moat um die Mitte mit südlichem Tor -> man muss "rumlaufen"
-  carve = addMoatAroundCenter(carve, mid, 'S');
-
-  // 3) Eingang oben finden (max Distanz zur Mitte)
-  const dist = bfsDistances(carve, mid.r, mid.c);
-  const bestEntranceColInner = argmaxTopEntrance(carve, dist);
+  // Eingang: wähle eine 0 in Zeile 1, die am weitesten von der Mitte entfernt ist
+  const bestEntranceColInner = pickEntranceFromTopRow(carve, mid.c);
   const entranceInner = { r: 1, c: bestEntranceColInner };
 
-  // 4) Kürzester Weg (durch das Süd-Tor erzwungen)
-  const solutionPath = shortestPath(carve, entranceInner, mid);
-
-  // 5) Viele und lange Sackgassen + Nebenäste
-  const pruned = pruneToSolutionWithDecoys(
-    carve,
-    solutionPath,
-    { decoyChance: 0.33, decoyMaxLen: 8, sideBranchChance: 0.35, sideBranchMaxLen: 4 }
-  );
-
-  // 6) Großes Grid + Start/Ziel
+  // Großes Grid + Start/Ziel
   const entranceColBig = bestEntranceColInner + 1;
-  ({grid, position, goal} = buildBigGrid(pruned, entranceColBig));
+  ({grid, position, goal} = buildBigGrid(carve, entranceColBig, mid));
 
-  // 7) Sichtbarkeit initialisieren
+  // Sichtbarkeit
   visited = new Set();
   visited.add(`${position.r},${position.c}`);
 
-  // 8) Render
   fitCellSize(true);
   draw();
   attachControls();
 }
 
-/* === Generator (DFS, kurvenlastig) === */
+/* ==== Level-Helfer ==== */
+function isValidLevel(arr){
+  if (!Array.isArray(arr) || arr.length !== SIZE) return false;
+  for (const row of arr){
+    if (!Array.isArray(row) || row.length !== SIZE) return false;
+    for (const v of row){
+      if (!(v===0 || v===1)) return false;
+    }
+  }
+  return true;
+}
+function copyLevel(arr){
+  // tiefe Kopie der 0/1-Matrix
+  return arr.map(row => row.slice());
+}
+function pickEntranceFromTopRow(carve, centerC){
+  // Finde alle Spalten c in Zeile 1 mit PATH (0)
+  const candidates = [];
+  for (let c=0;c<SIZE;c++){
+    if (carve[1][c]===PATH) candidates.push(c);
+  }
+  if (!candidates.length){
+    // Notfall: Mittlere Spalte öffnen
+    const c = Math.floor(SIZE/2);
+    carve[1][c]=PATH; return c;
+  }
+  // wähle die Spalte mit maximaler |c - centerC|
+  let best=candidates[0], bestD=-1;
+  for (const c of candidates){
+    const d=Math.abs(c-centerC);
+    if (d>bestD){ bestD=d; best=c; }
+  }
+  return best;
+}
+
+/* ==== Generator (Fallback) – identisch wie vorher, nur für Notfälle ==== */
 function buildMazeComplex(n){
   if (n % 2 === 0) n -= 1;
   const rows=n, cols=n;
@@ -276,7 +335,6 @@ function buildMazeComplex(n){
       if (inBounds(nr,nc) && carve[nr][nc]===WALL) cand.push({i,nr,nc,mr:dr/2,mc:dc/2});
     }
     if (cand.length){
-      // Kurven bevorzugen -> längerer Pfad
       cand.sort((a,b)=>{
         const aTurn=(a.i===last)?1:0, bTurn=(b.i===last)?1:0;
         if (aTurn!==bTurn) return aTurn - bTurn;
@@ -289,8 +347,8 @@ function buildMazeComplex(n){
     } else { stack.pop(); last=-1; }
   }
 
-  // zusätzliche Sackgassen im Rohmaze
-  const spurChance = 0.45;
+  // ein paar zusätzliche Gänge
+  const spurChance = 0.42;
   for (let rr=1; rr<rows-1; rr++){
     for (let cc=1; cc<cols-1; cc++){
       if (carve[rr][cc]!==PATH || Math.random()>=spurChance) continue;
@@ -302,9 +360,9 @@ function buildMazeComplex(n){
         if (!(a2>0&&b2>0&&a2<rows-1&&b2<cols-1)) continue;
         if (carve[a1][b1]===WALL && carve[a2][b2]===WALL){
           carve[a1][b1]=PATH;
-          if (Math.random()<0.9){ carve[a2][b2]=PATH;
+          if (Math.random()<0.85){ carve[a2][b2]=PATH;
             const a3=a2+dr/2, b3=b2+dc/2;
-            if (Math.random()<0.4 && a3>0&&b3>0&&a3<rows-1&&b3<cols-1 && carve[a3][b3]===WALL){ carve[a3][b3]=PATH; }
+            if (Math.random()<0.35 && a3>0&&b3>0&&a3<rows-1&&b3<cols-1 && carve[a3][b3]===WALL){ carve[a3][b3]=PATH; }
           }
           break;
         }
@@ -314,143 +372,29 @@ function buildMazeComplex(n){
   return carve;
 }
 
-/* Moat (Wallgraben) um die Mitte mit Tor in gateDir ('N','S','E','W') */
-function addMoatAroundCenter(carve, center, gateDir='S'){
-  const R=carve.length, C=carve[0].length;
-  const inB=(r,c)=> r>=0 && c>=0 && r<R && c<C;
-  const ring = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-  for (const [dr,dc] of ring){
-    const rr=center.r+dr, cc=center.c+dc;
-    if (inB(rr,cc)) carve[rr][cc]=WALL;
-  }
-  const gates = {N:[-1,0],S:[1,0],E:[0,1],W:[0,-1]};
-  const [gr, gc] = [center.r + gates[gateDir][0], center.c + gates[gateDir][1]];
-  if (inB(gr,gc)) carve[gr][gc]=PATH;
-  if (inB(center.r, center.c)) carve[center.r][center.c]=PATH;
-  return carve;
-}
-
-/* ==== BFS-Distanzen, kürzester Pfad ==== */
-function bfsDistances(carve, sr, sc){
-  const R=carve.length, C=carve[0].length;
-  const dist=Array.from({length:R},()=>Array(C).fill(Infinity));
-  const q=[]; if (carve[sr][sc]===PATH){ dist[sr][sc]=0; q.push([sr,sc]); }
-  const steps=[[1,0],[-1,0],[0,1],[0,-1]];
-  while(q.length){
-    const [r,c]=q.shift();
-    for(const [dr,dc] of steps){
-      const nr=r+dr, nc=c+dc;
-      if(nr<0||nc<0||nr>=R||nc>=C) continue;
-      if (carve[nr][nc]!==PATH) continue;
-      if (dist[nr][nc] > dist[r][c]+1){ dist[nr][nc]=dist[r][c]+1; q.push([nr,nc]); }
-    }
-  }
-  return dist;
-}
-
-function shortestPath(carve, start, goal){
-  const R=carve.length, C=carve[0].length;
-  const dist=bfsDistances(carve, start.r, start.c);
-  if (!Number.isFinite(dist[goal.r][goal.c])) return new Set();
-  const steps=[[1,0],[-1,0],[0,1],[0,-1]];
-  const path=new Set();
-  let r=goal.r, c=goal.c;
-  path.add(`${r},${c}`);
-  while (r!==start.r || c!==start.c){
-    for (const [dr,dc] of steps){
-      const nr=r+dr, nc=c+dc;
-      if(nr<0||nc<0||nr>=R||nc>=C) continue;
-      if (dist[nr][nc] === dist[r][c]-1){
-        r=nr; c=nc; path.add(`${r},${c}`); break;
-      }
-    }
-  }
-  return path;
-}
-
-/* Prune: Lösungspfad + viele/längere Decoys + Nebenäste */
-function pruneToSolutionWithDecoys(
-  carve,
-  pathSet,
-  {decoyChance=0.33, decoyMaxLen=8, sideBranchChance=0.35, sideBranchMaxLen=4}={}
-){
-  const R=carve.length, C=carve[0].length;
-  const isPath = (r,c)=> pathSet.has(`${r},${c}`);
-
-  // 1) Alles außer Lösungspfad -> Wand
-  for (let r=0;r<R;r++){
-    for (let c=0;c<C;c++){
-      if (carve[r][c]===PATH && !isPath(r,c)) carve[r][c]=WALL;
-    }
-  }
-
-  // 2) Entlang des Lösungspfads Sackgassen wachsen lassen
-  const DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
-  function growLine(sr,sc,dr,dc,maxLen){
-    let pr=sr, pc=sc, len = 1 + Math.floor(Math.random()*maxLen);
-    while (len>0 && pr>0 && pc>0 && pr<R-1 && pc<C-1 && carve[pr][pc]===WALL){
-      carve[pr][pc]=PATH;
-      // Nebenast abzweigen
-      if (sideBranchChance>0 && Math.random()<sideBranchChance){
-        const ortho = (dr===0) ? [[1,0],[-1,0]] : [[0,1],[0,-1]];
-        const [sdr,sdc] = ortho[Math.random()<0.5?0:1];
-        const sr2=pr+sdr, sc2=pc+sdc;
-        if (sr2>0 && sc2>0 && sr2<R-1 && sc2<C-1 && carve[sr2][sc2]===WALL){
-          growLine(sr2, sc2, sdr, sdc, sideBranchMaxLen);
-        }
-      }
-      pr+=dr; pc+=dc; len--;
-    }
-  }
-
-  for (let r=1;r<R-1;r++){
-    for (let c=1;c<C-1;c++){
-      if (!isPath(r,c) || Math.random()>=decoyChance) continue;
-      const shuffled = DIRS.slice().sort(()=>Math.random()-0.5);
-      for (const [dr,dc] of shuffled){
-        const nr=r+dr, nc=c+dc;
-        if (nr<=0||nc<=0||nr>=R-1||nc>=C-1 || carve[nr][nc]!==WALL) continue;
-        growLine(nr,nc,dr,dc,decoyMaxLen);
-        break;
-      }
-    }
-  }
-  return carve;
-}
-
-/* Beste obere Öffnung (größte Distanz zur Mitte) */
-function argmaxTopEntrance(carve, dist){
-  const C=carve[0].length;
-  let bestC= Math.floor(C/2), bestD=-1;
-  for(let c=1;c<C-1;c++){
-    if (carve[1][c]===PATH){
-      const d = dist[1][c];
-      if (Number.isFinite(d) && d>bestD){ bestD=d; bestC=c; }
-    }
-  }
-  return bestC;
-}
-
-/* Big grid mit Wald-Ring + Eingang + Start/Ziel */
-function buildBigGrid(carve, entranceColBig){
+/* ==== Big grid mit Wald-Ring + Eingang + Start/Ziel ==== */
+function buildBigGrid(carve, entranceColBig, mid){
+  // carve ist 29x29 mit 0 (Weg) / 1 (Wand)
   const n=carve.length;
   const big = Array.from({length:n+2},(_,R)=>
     Array.from({length:n+2},(_,C)=>{
       if (R===0||C===0||R===n+1||C===n+1) return FOREST;
-      return carve[R-1][C-1]===WALL ? WALL : PATH;
+      return carve[R-1][C-1]; // 0 oder 1 direkt übernehmen
     })
   );
+
+  // Eingang oben öffnen
   big[1][entranceColBig]=PATH;
 
   const start = { r: 0, c: entranceColBig };
-  const g     = { r: Math.floor((n+2)/2), c: Math.floor((n+2)/2) };
+  const g     = { r: mid.r+1, c: mid.c+1 }; // +1 wegen Wald-Ring
   return { grid: big, position:start, goal:g };
 }
 
 /* ==== Sizing ==== */
 function fitCellSize(onlySize){
   const headerH = document.querySelector('header')?.offsetHeight || 0;
-  const barH    = document.querySelector('.bar')?.offsetHeight    || 0;
+  const bars = [...document.querySelectorAll('.bar')].reduce((h,el)=>h+el.offsetHeight,0);
   const controlsH = document.querySelector('.controls')?.offsetHeight || 0;
   const winH    = document.getElementById('win')?.offsetHeight    || 0;
 
@@ -458,7 +402,7 @@ function fitCellSize(onlySize){
   const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
 
   const availW = Math.max(200, vw - 20);
-  const availH = Math.max(200, vh - (headerH + barH + controlsH + winH + 20));
+  const availH = Math.max(200, vh - (headerH + bars + controlsH + winH + 20));
 
   const cols = GRID || parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols')) || 1;
   const cellByW = Math.floor(availW / cols) - 1;
@@ -498,7 +442,7 @@ function draw(){
         cell.className = 'cell wall';
       } else if (v===FOREST) {
         cell.className = 'cell forest';
-      } else {
+      } else { // PATH
         cell.className = 'cell path';
       }
 
@@ -511,12 +455,10 @@ function draw(){
         cell.classList.add('player'); cell.tabIndex = 0; cell.appendChild(s);
       }
 
-      // Fog-Logik:
-      // - lampOn (Sichtfeld AN) => ALLES sichtbar, keine Dim-/Fog-Klassen
-      // - lampOff (Sichtfeld AUS) => Fog aktiv mit grauem Sichtkegel
+      // Taschenlampe/Fog
       if (!lampOn){
         if (!seenEver[r][c]) {
-          if (v !== FOREST) cell.classList.add('fog'); // Forest NIE verdunkeln
+          if (v !== FOREST) cell.classList.add('fog'); // Forest bleibt sichtbar
         } else if (fringeNow[r][c]) {
           if (v===PATH || (r===goal.r && c===goal.c)){
             cell.classList.add('dim');
@@ -535,13 +477,11 @@ function computeVisibilityStates(){
   const seenEver = Array.from({length:GRID},()=>Array(GRID).fill(false));
   const fringeNow = Array.from({length:GRID},()=>Array(GRID).fill(false));
 
-  // lampOn: alles sichtbar
   if (lampOn){
     for (let r=0;r<GRID;r++) for (let c=0;c<GRID;c++) seenEver[r][c]=true;
     return { seenEver, fringeNow };
   }
 
-  // bereits besuchte Felder sind "gesehen"
   if (visited){
     for (const key of visited){
       const [r,c] = key.split(',').map(Number);
@@ -549,7 +489,6 @@ function computeVisibilityStates(){
     }
   }
 
-  // Sichtkegel
   const R = position.r, C = position.c;
   for (let r=R-FOG_RADIUS; r<=R+FOG_RADIUS; r++){
     for (let c=C-FOG_RADIUS; c<=C+FOG_RADIUS; c++){
@@ -632,6 +571,8 @@ function detachControls(){
 </script>
 </body>
 </html>
+
+
 
 
 
