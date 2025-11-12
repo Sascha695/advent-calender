@@ -3,58 +3,43 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>6. Dezember – Nikolaus im komplizierten Labyrinth</title>
+<title>6. Dezember – Nikolaus im harten Labyrinth</title>
 <style>
   :root{
-    --cell: 24px;      /* wird per JS angepasst, aber nie < 12px */
-    --gap: 2px;        /* bei kleinen Zellen auf 1px reduziert */
+    --cell: 24px;      /* per JS so, dass alles reinpasst */
+    --gap: 2px;        /* bei kleinen Zellen automatisch 1px */
     --cols: 10;        /* wird per JS gesetzt */
-    --wall:#0f172a;    /* sehr dunkle Wände (Slate-950) */
+    --wall:#0f172a;    /* sehr dunkle Wände */
     --path:#ffffff;    /* helle Wege */
     --forest:#166534;  /* Wald außen */
     --house:#ffd54f;   /* Ziel-Hintergrund */
     --grid-outline:#00000033;
-    --player-scale: 1.25; /* Nikolaus größer */
-    --goal-scale:   1.05; /* Ziel etwas größer */
+    --player-scale: 1.25;
+    --goal-scale:   1.05;
   }
 
-  /* Hintergrundbild + Overlay für bessere Lesbarkeit */
   body{
-    margin:0; height:100%;
-    font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-    color:#111; background:#e8f3ea;
-    /* wird per JS als background-image gesetzt, wenn URL angegeben ist */
-    background-size: cover;
-    background-position: center center;
-    background-attachment: fixed;
+    margin:0;height:100%;
+    font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:#e8f3ea; color:#111;
+    background-size:cover; background-position:center; background-attachment:fixed;
   }
-  .bg-overlay{
-    position:fixed; inset:0; pointer-events:none;
-    background:
-      linear-gradient(0deg, rgba(0,0,0,.20), rgba(0,0,0,.20));
-    z-index:-1;
-  }
+  .bg-overlay{ position:fixed; inset:0; pointer-events:none; background:linear-gradient(0deg, rgba(0,0,0,.20), rgba(0,0,0,.20)); z-index:-1; }
 
   header,footer{padding:12px 10px; text-align:center}
   h1{margin:0 0 6px}
   .sub{opacity:.9}
 
   .wrap{display:grid; place-items:center; padding:10px; gap:10px}
-
   .bar{display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap}
-  .bar button{
+  .bar button, .bar .toggle{
     padding:8px 12px; border-radius:10px; border:1px solid #b8c1cc; background:#fff; font:inherit; cursor:pointer;
   }
 
-  /* Rahmen: sichtbare Outline + Schatten, kann notfalls scrollen */
   .frame{
-    padding:8px;
-    border-radius:16px;
-    background: rgba(255,255,255,.65);
-    box-shadow: 0 10px 28px rgba(0,0,0,.18), inset 0 0 0 2px var(--grid-outline);
-    max-width: 100vw;
-    max-height: calc(100vh - 220px);
-    overflow: auto; /* Backup, falls’s sehr knapp wird */
+    padding:8px; border-radius:16px; background:rgba(255,255,255,.65);
+    box-shadow:0 10px 28px rgba(0,0,0,.18), inset 0 0 0 2px var(--grid-outline);
+    max-width:100vw; max-height:calc(100vh - 220px); overflow:auto;
   }
 
   .maze{
@@ -63,20 +48,14 @@
     grid-auto-rows:var(--cell);
     gap:var(--gap);
     touch-action: pan-x pan-y;
-    /* sichtbarer Rand um das gesamte Grid */
-    outline: 2px solid var(--grid-outline);
-    outline-offset: 6px;
-    background: #fafafaAA;
-    border-radius: 12px;
+    outline:2px solid var(--grid-outline); outline-offset:6px;
+    background:#fafafaAA; border-radius:12px;
   }
 
   .cell{
     width:var(--cell); height:var(--cell);
-    border-radius:4px;
-    position:relative;
-    display:grid; place-items:center;
+    border-radius:4px; position:relative; display:grid; place-items:center;
     user-select:none; overflow:visible;
-    /* dünner Rand pro Zelle, damit man das Raster IMMER erkennt */
     box-shadow: inset 0 0 0 1px rgba(0,0,0,.10);
   }
 
@@ -85,59 +64,38 @@
   .forest{ background:var(--forest); }
 
   .goal{ background:var(--house); }
-  .goal.fallback::after{
-    content:"🏠";
-    font-size:calc(var(--cell)*0.75);
-  }
+  .goal.fallback::after{ content:"🏠"; font-size:calc(var(--cell)*0.75); }
 
+  /* Spieler- & Ziel-Sprites */
   .sprite{
-    position:absolute; inset:50% auto auto 50%;
-    transform:translate(-50%,-50%);
-    width:calc(var(--cell) * var(--player-scale));
-    height:calc(var(--cell) * var(--player-scale));
-    display:grid; place-items:center;
-    background-repeat:no-repeat; background-size:contain; background-position:center;
-    pointer-events:none;
-    text-shadow: 0 1px 2px rgba(0,0,0,.35);
+    position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%);
+    width:calc(var(--cell) * var(--player-scale)); height:calc(var(--cell) * var(--player-scale));
+    display:grid; place-items:center; background-repeat:no-repeat; background-size:contain; background-position:center;
+    pointer-events:none; text-shadow:0 1px 2px rgba(0,0,0,.35);
   }
   .sprite.emoji{ font-size:calc(var(--cell) * var(--player-scale)*0.9); }
 
   .goal-sprite{
-    position:absolute; inset:50% auto auto 50%;
-    transform:translate(-50%,-50%);
-    width:calc(var(--cell) * var(--goal-scale));
-    height:calc(var(--cell) * var(--goal-scale));
-    background-repeat:no-repeat; background-size:contain; background-position:center;
-    pointer-events:none;
+    position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%);
+    width:calc(var(--cell) * var(--goal-scale)); height:calc(var(--cell) * var(--goal-scale));
+    background-repeat:no-repeat; background-size:contain; background-position:center; pointer-events:none;
   }
   .goal-sprite.emoji{ font-size:calc(var(--cell) * var(--goal-scale)*0.9); }
 
-  .hud{ display:grid; gap:10px; justify-items:center; }
-  .legend{
-    display:inline-grid; grid-auto-flow:column; gap:10px;
-    padding:8px 12px; background:#ffffffdd; border-radius:10px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  /* Fog of War */
+  .fog{
+    position:relative;
   }
-  .legend .dot{ width:14px;height:14px;border-radius:4px;display:inline-block;margin-right:6px;vertical-align:middle}
-
-  .controls{
-    display:grid;
-    grid-template-areas:
-      ". up ."
-      "left center right"
-      ". down .";
-    gap:8px; touch-action:manipulation;
+  .fog::after{
+    content:""; position:absolute; inset:0;
+    background: rgba(0,0,0,0.55);
+    border-radius:4px;
+    pointer-events:none;
   }
-  .btn{
-    grid-area:center; width:56px;height:56px;border-radius:12px;border:1px solid #b8c1cc;background:#fff;font-size:22px;
-  }
-  .btn:active{ transform:translateY(1px); }
-  .up{grid-area:up}.down{grid-area:down}.left{grid-area:left}.right{grid-area:right}
 
   .win{display:none; padding:10px 14px; background:#fff3cd; border:1px solid #ffe08a; border-radius:10px;}
 
-  @media (max-width: 380px){
-    .btn{ width:48px; height:48px; font-size:20px; }
+  @media (max-width:380px){
     .frame{ max-height: calc(100vh - 200px); }
   }
 </style>
@@ -146,119 +104,83 @@
 <div class="bg-overlay"></div>
 
 <header>
-  <h1>6. Dezember – Nikolaus im komplizierten Labyrinth</h1>
-  <div class="sub">Vom Wald außen zum gelben Haus in der Mitte. Viel Spaß!</div>
+  <h1>6. Dezember – Nikolaus im harten Labyrinth</h1>
+  <div class="sub">Gleich groß, aber mit maximalen Sackgassen & langem Weg zur Mitte.</div>
 </header>
 
 <main class="wrap">
   <div class="bar">
     <button id="regen">Neu erzeugen</button>
+    <button id="fogToggle" class="toggle" aria-pressed="true">Sichtfeld: AN</button>
   </div>
 
   <div class="frame" id="frame">
     <div id="maze" class="maze" aria-label="Labyrinth" role="grid" tabindex="0"></div>
   </div>
 
-  <div class="hud">
-    <div class="legend" aria-hidden="true">
-      <span><span class="dot" style="background:var(--forest)"></span>Wald</span>
-      <span><span class="dot" style="background:var(--path)"></span>Weg</span>
-      <span><span class="dot" style="background:var(--wall)"></span>Wand</span>
-      <span>Ziel</span>
-      <span>🎅 Du</span>
-    </div>
-
-    <div class="controls" id="dpad" aria-label="Steuerkreuz">
-      <button class="btn up" aria-label="Nach oben">▲</button>
-      <button class="btn left" aria-label="Nach links">◀</button>
-      <button class="btn" aria-label="Zentrum" disabled>🎅</button>
-      <button class="btn right" aria-label="Nach rechts">▶</button>
-      <button class="btn down" aria-label="Nach unten">▼</button>
-    </div>
-
-    <div class="win" id="win">Geschafft! Merke dir den Buchstaben: <strong id="letter">N</strong></div>
-  </div>
+  <div class="win" id="win">Geschafft! Merke dir den Buchstaben: <strong id="letter">N</strong></div>
 </main>
 
 <footer><p><a href="index.html">Zurück zum Kalender</a></p></footer>
 
 <script>
-/* ==============================
-   Deine Bilder
-   ============================== */
-/* Setz hier einfach URLs. Leer = Emoji/Fallback. */
-const backgroundImageURL = ""; // z.B. "assets/ich.jpg"
+/* ==== Deine Bilder ==== */
+const backgroundImageURL = "assets/nikolaus_eichbühlstraße.png"; // z.B. "assets/ich.jpg"
 const playerImageURL     = ""; // z.B. "assets/nikolaus.png"
 const goalImageURL       = ""; // z.B. "assets/gelbes-haus.png"
+if (backgroundImageURL){ document.body.style.backgroundImage = `url('${backgroundImageURL}')`; }
 
-/* Hintergrund anwenden (mit leichter Abdunklung durch .bg-overlay) */
-if (backgroundImageURL){
-  document.body.style.backgroundImage = `url('${backgroundImageURL}')`;
-}
-
-/* ==============================
-   Labyrinth: klein & komplex (33×33)
-   mit hoher Sichtbarkeit und robuster Größenlogik
-   ============================== */
+/* ==== Parameter ==== */
 const FOREST=2, WALL=1, PATH=0;
-const SIZE = 33;                 // innen: gut für Handy
+const SIZE = 33;       // innen (NICHT größer)
 let GRID = 0;
 let grid, position, goal;
+
+let fogEnabled = true; // Sichtfeld standardmäßig an
+const FOG_RADIUS = 2;  // sichtbare Nachbarschaft (Chebyshev-Distanz)
 
 const mazeEl   = document.getElementById('maze');
 const frameEl  = document.getElementById('frame');
 const regenBtn = document.getElementById('regen');
+const fogBtn   = document.getElementById('fogToggle');
 
 regenBtn.addEventListener('click', generateAndDraw);
-window.addEventListener('resize', ()=>fitCellSize(true)); // true = nur Größe neu setzen
+fogBtn.addEventListener('click', () => {
+  fogEnabled = !fogEnabled; fogBtn.textContent = `Sichtfeld: ${fogEnabled ? 'AN' : 'AUS'}`;
+  fogBtn.setAttribute('aria-pressed', String(fogEnabled));
+  draw();
+});
+window.addEventListener('resize', ()=>fitCellSize(true));
 
-generateAndDraw(); // Start
+/* ==== Init ==== */
+generateAndDraw();
 
+/* ==== Pipeline ==== */
 function generateAndDraw(){
-  GRID = SIZE + 2; // + äußerer Waldring
+  GRID = SIZE + 2; // + äußerer Wald-Ring
   document.documentElement.style.setProperty('--cols', GRID);
-  ({grid, position, goal} = buildMazeComplex(SIZE));
-  fitCellSize(false); // nach GRID+Maze, damit Werte sicher vorhanden sind
+
+  const carve = buildMazeComplex(SIZE);           // 1) perfektes Maze + Spurs
+  const mid = { r: Math.floor(SIZE/2), c: Math.floor(SIZE/2) };
+
+  // 2) Eingang so wählen, dass Distanz zum Zentrum maximal wird
+  const dist = bfsDistances(carve, mid.r, mid.c);
+  const bestEntranceColInner = argmaxTopEntrance(carve, dist); // 0..SIZE-1 (inner)
+  const entranceColBig = bestEntranceColInner + 1;             // + Wald-Rand
+
+  // 3) Großes Grid bauen (mit Wald & bestem Eingang)
+  ({grid, position, goal} = buildBigGrid(carve, entranceColBig));
+
+  fitCellSize(false);
   draw();
   attachControls();
 }
 
-/* Sichere Zellgrößenberechnung:
-   - Nie kleiner als 12px
-   - Berücksichtigt Header/HUD/Button-Höhen
-   - Passt Gap an */
-function fitCellSize(onlySize){
-  const headerH = document.querySelector('header')?.offsetHeight || 0;
-  const hudH    = document.querySelector('.hud')?.offsetHeight    || 0;
-  const barH    = document.querySelector('.bar')?.offsetHeight    || 0;
-
-  const vw = Math.max(document.documentElement.clientWidth,  window.innerWidth  || 0);
-  const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-
-  // verfügbarer Platz für das Grid
-  const availW = Math.max(200, vw - 24);
-  const availH = Math.max(200, vh - (headerH + barH + hudH + 24));
-
-  // Schutz, falls GRID noch 0 wäre
-  const cols = Math.max(1, parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols')) || GRID || 1);
-
-  const cellByW = Math.floor(availW / cols) - 1;
-  const cellByH = Math.floor(availH / cols) - 1;
-
-  // NIE zu klein, NIE negativ
-  const cell = Math.max(12, Math.min(36, Math.min(cellByW, cellByH)));
-  const gap  = cell < 16 ? 1 : 2;
-
-  document.documentElement.style.setProperty('--cell', cell + 'px');
-  document.documentElement.style.setProperty('--gap',  gap  + 'px');
-
-  // Rahmenhöhe setzen (Backup-Scroll, wenn’s extrem eng wird)
-  frameEl.style.maxHeight = Math.max(180, availH) + 'px';
-
-  if (!onlySize && GRID){ draw(); }
-}
-
-/* Generator: Turn-Bias + Spurs + wenige Loops → viele Sackgassen & Abzweigungen */
+/* === Komplexer Generator ===
+   - starker Kurven-Bias (weniger lange Geraden)
+   - aggressive Spurs (bis 3 Zellen) für viele Sackgassen
+   - KEINE Loops (perfect maze)
+*/
 function buildMazeComplex(n){
   if (n % 2 === 0) n -= 1;
   const rows=n, cols=n;
@@ -280,9 +202,10 @@ function buildMazeComplex(n){
       if (inBounds(nr,nc) && carve[nr][nc]===WALL) cand.push({i,nr,nc,mr:dr/2,mc:dc/2});
     }
     if (cand.length){
+      // Starker Turn-Bias (vermeide gleiche Richtung)
       cand.sort((a,b)=>{
         const aTurn=(a.i===last)?1:0, bTurn=(b.i===last)?1:0;
-        if (aTurn!==bTurn) return aTurn - bTurn; // lieber Kurven
+        if (aTurn!==bTurn) return aTurn - bTurn;
         return Math.random()-0.5;
       });
       const p=cand[0];
@@ -292,55 +215,109 @@ function buildMazeComplex(n){
     } else { stack.pop(); last=-1; }
   }
 
-  // Spurs (mehr Sackgassen)
-  const spurChance = 0.20;
+  // Spurs: viele Sackgassen; Längen 1–3
+  const spurChance = 0.35;
   for (let rr=1; rr<rows-1; rr++){
     for (let cc=1; cc<cols-1; cc++){
       if (carve[rr][cc]!==PATH || Math.random()>=spurChance) continue;
-      const shuffled = DIRS.slice().sort(()=>Math.random()-0.5);
-      for (const [dr,dc] of shuffled){
-        const a1=rr+dr/2, b1=cc+dc/2;
-        const a2=rr+dr,   b2=cc+dc;
-        if (inBounds(a2,b2) && carve[a1][b1]===WALL && carve[a2][b2]===WALL){
+      const dirs = DIRS.slice().sort(()=>Math.random()-0.5);
+      for (const [dr,dc] of dirs){
+        let a1=rr+dr/2, b1=cc+dc/2;
+        let a2=rr+dr,   b2=cc+dc;
+        if (!inBounds(a2,b2)) continue;
+        if (carve[a1][b1]===WALL && carve[a2][b2]===WALL){
           carve[a1][b1]=PATH;
-          if (Math.random()<0.5 && inBounds(a2,b2)) carve[a2][b2]=PATH;
+          if (Math.random()<0.8 && inBounds(a2,b2)){ carve[a2][b2]=PATH;
+            // 30% Chance auf Tiefe 3
+            const a3=a2+dr/2, b3=b2+dc/2;
+            if (Math.random()<0.3 && inBounds(a3,b3) && carve[a3][b3]===WALL){ carve[a3][b3]=PATH; }
+          }
           break;
         }
       }
     }
   }
+  return carve;
+}
 
-  // Wenige Loops (Abzweigungen)
-  const loopChance = 0.05;
-  for (let rr=2; rr<rows-2; rr++){
-    for (let cc=2; cc<cols-2; cc++){
-      if (carve[rr][cc]!==WALL || Math.random()>=loopChance) continue;
-      const horiz=(carve[rr][cc-1]===PATH && carve[rr][cc+1]===PATH);
-      const vert =(carve[rr-1][cc]===PATH && carve[rr+1][cc]===PATH);
-      if (horiz || vert) carve[rr][cc]=PATH;
+/* Distanzkarte (BFS) ab Mittelpunkt */
+function bfsDistances(carve, sr, sc){
+  const R=carve.length, C=carve[0].length;
+  const dist=Array.from({length:R},()=>Array(C).fill(Infinity));
+  const q=[]; if (carve[sr][sc]===PATH){ dist[sr][sc]=0; q.push([sr,sc]); }
+  const steps=[[1,0],[-1,0],[0,1],[0,-1]];
+  while(q.length){
+    const [r,c]=q.shift();
+    for(const [dr,dc] of steps){
+      const nr=r+dr, nc=c+dc;
+      if(nr<0||nc<0||nr>=R||nc>=C) continue;
+      if (carve[nr][nc]!==PATH) continue;
+      if (dist[nr][nc] > dist[r][c]+1){
+        dist[nr][nc]=dist[r][c]+1; q.push([nr,nc]);
+      }
     }
   }
+  return dist;
+}
 
-  // Großes Grid mit Waldring
+/* Beste obere Öffnung (größte Distanz zur Mitte) */
+function argmaxTopEntrance(carve, dist){
+  const C=carve[0].length;
+  let bestC= Math.floor(C/2), bestD=-1;
+  for(let c=1;c<C-1;c++){
+    if (carve[1][c]===PATH){ // erste begehbare Zeile
+      const d = dist[1][c];
+      if (Number.isFinite(d) && d>bestD){ bestD=d; bestC=c; }
+    }
+  }
+  return bestC;
+}
+
+/* Big grid mit Wald-Ring + Eingang + Start/Ziel */
+function buildBigGrid(carve, entranceColBig){
+  const n=carve.length;
   const big = Array.from({length:n+2},(_,R)=>
     Array.from({length:n+2},(_,C)=>{
       if (R===0||C===0||R===n+1||C===n+1) return FOREST;
       return carve[R-1][C-1]===WALL ? WALL : PATH;
     })
   );
+  big[1][entranceColBig]=PATH;
 
-  // Eingang unterhalb Start öffnen, Ziel in der Mitte
-  const entranceCol = Math.floor((n+2)/2);
-  big[1][entranceCol] = PATH;
-
-  const start = { r: 0, c: entranceCol };
+  const start = { r: 0, c: entranceColBig };
   const g     = { r: Math.floor((n+2)/2), c: Math.floor((n+2)/2) };
-
-  return { grid: big, position: start, goal: g };
+  return { grid: big, position:start, goal:g };
 }
 
-/* Render */
+/* ==== Sizing: alles sichtbar ==== */
+function fitCellSize(onlySize){
+  const headerH = document.querySelector('header')?.offsetHeight || 0;
+  const barH    = document.querySelector('.bar')?.offsetHeight    || 0;
+  const winH    = document.getElementById('win')?.offsetHeight    || 0;
+
+  const vw = Math.max(document.documentElement.clientWidth,  window.innerWidth  || 0);
+  const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+
+  const availW = Math.max(200, vw - 24);
+  const availH = Math.max(200, vh - (headerH + barH + winH + 24));
+
+  const cols = GRID || parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols')) || 1;
+  const cellByW = Math.floor(availW / cols) - 1;
+  const cellByH = Math.floor(availH / cols) - 1;
+
+  const cell = Math.max(12, Math.min(36, Math.min(cellByW, cellByH)));
+  const gap  = cell < 16 ? 1 : 2;
+
+  document.documentElement.style.setProperty('--cell', cell + 'px');
+  document.documentElement.style.setProperty('--gap',  gap  + 'px');
+  frameEl.style.maxHeight = Math.max(180, availH) + 'px';
+
+  if (!onlySize && GRID){ draw(); }
+}
+
+/* ==== Render (mit Fog) ==== */
 function draw(){
+  const seen = computeVisibility();
   mazeEl.innerHTML = '';
   for (let r=0; r<GRID; r++){
     for (let c=0; c<GRID; c++){
@@ -365,20 +342,17 @@ function draw(){
         cell.className = 'cell path';
       }
 
+      // Spieler
       if (r===position.r && c===position.c){
         const s = document.createElement('div');
-        if (playerImageURL){
-          s.className = 'sprite';
-          s.style.backgroundImage = `url('${playerImageURL}')`;
-        } else {
-          s.className = 'sprite emoji';
-          s.textContent = '🎅';
-        }
+        if (playerImageURL){ s.className = 'sprite'; s.style.backgroundImage = `url('${playerImageURL}')`; }
+        else { s.className = 'sprite emoji'; s.textContent = '🎅'; }
         s.setAttribute('aria-hidden','true');
-        cell.classList.add('player');
-        cell.tabIndex = 0;
-        cell.appendChild(s);
+        cell.classList.add('player'); cell.tabIndex = 0; cell.appendChild(s);
       }
+
+      // Fog
+      if (fogEnabled && !seen[r][c]) cell.classList.add('fog');
 
       mazeEl.appendChild(cell);
     }
@@ -386,17 +360,41 @@ function draw(){
   focusPlayer();
 }
 
+/* Sichtfeld: Radius um Spieler + alles Betretene (persistente Sicht) */
+const visited = new Set();
+function computeVisibility(){
+  const seen = Array.from({length:GRID},()=>Array(GRID).fill(false));
+  // Persistenz: alles, was je besucht wurde, bleibt sichtbar
+  for (const key of visited){
+    const [r,c] = key.split(',').map(Number);
+    if (r>=0 && c>=0 && r<GRID && c<GRID) seen[r][c]=true;
+  }
+  // aktueller Radius
+  const R = position.r, C = position.c;
+  for (let r=R-FOG_RADIUS; r<=R+FOG_RADIUS; r++){
+    for (let c=C-FOG_RADIUS; c<=C+FOG_RADIUS; c++){
+      if (r>=0 && c>=0 && r<GRID && c<GRID){
+        if (Math.max(Math.abs(r-R), Math.abs(c-C)) <= FOG_RADIUS){
+          seen[r][c]=true;
+        }
+      }
+    }
+  }
+  return seen;
+}
+
 function focusPlayer(){
   const p = mazeEl.querySelector('.player');
   if (p) p.focus({preventScroll:true});
 }
 
-/* Bewegung & Win */
+/* ==== Bewegung & Win ==== */
 function canMove(r,c){ return !(r<0||c<0||r>=GRID||c>=GRID) && grid[r][c]!==WALL; }
 function move(dr,dc){
   const nr=position.r+dr, nc=position.c+dc;
   if(!canMove(nr,nc)) return;
   position={r:nr,c:nc};
+  visited.add(`${nr},${nc}`);
   draw();
   if(position.r===goal.r && position.c===goal.c){
     document.getElementById('win').style.display='block';
@@ -405,12 +403,7 @@ function move(dr,dc){
   }
 }
 
-/* Controls */
-const upBtn    = document.querySelector('.up');
-const downBtn  = document.querySelector('.down');
-const leftBtn  = document.querySelector('.left');
-const rightBtn = document.querySelector('.right');
-
+/* ==== Controls ==== */
 function keyHandler(e){
   const k=e.key.toLowerCase();
   if(['arrowup','w'].includes(k)) move(-1,0);
@@ -439,16 +432,11 @@ function attachControls(){
   document.addEventListener('keydown', keyHandler);
   mazeEl.addEventListener('touchstart', onTouchStart, {passive:false});
   mazeEl.addEventListener('touchend', onTouchEnd, {passive:false});
-  upBtn.onclick    = ()=>move(-1,0);
-  downBtn.onclick  = ()=>move(1,0);
-  leftBtn.onclick  = ()=>move(0,-1);
-  rightBtn.onclick = ()=>move(0,1);
 }
 function detachControls(){
   document.removeEventListener('keydown', keyHandler);
   mazeEl.removeEventListener('touchstart', onTouchStart, {passive:false});
   mazeEl.removeEventListener('touchend', onTouchEnd, {passive:false});
-  upBtn.onclick = downBtn.onclick = leftBtn.onclick = rightBtn.onclick = null;
 }
 </script>
 </body>
