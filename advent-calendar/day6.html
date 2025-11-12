@@ -84,14 +84,14 @@
   }
   .goal-sprite.emoji{ font-size:calc(var(--cell) * var(--goal-scale)*0.9); }
 
-  /* Fog of War */
-  .fog{ position:relative; }
-  .fog::after{
-    content:""; position:absolute; inset:0;
-    background: rgba(0,0,0,0.55);
-    border-radius:4px;
-    pointer-events:none;
+  /* Fog of War – ungesehene Zellen komplett verbergen */
+  .fog{
+    position:relative;
+    background:#0b1220 !important;   /* einheitlich dunkel */
+    box-shadow:none !important;       /* kein Grid-Umriss */
   }
+  .fog::after{ display:none; }        /* keine halbtransparente Maske */
+  .fog > * { display:none !important; } /* Sprites/Emoji etc. verbergen */
 
   .win{display:none; padding:10px 14px; background:#fff3cd; border:1px solid #ffe08a; border-radius:10px;}
 
@@ -149,10 +149,14 @@
 
 <script>
 /* ==== Deine Bilder ==== */
-const backgroundImageURL = "assets/nikolaus_eichbühlstraße.png"; // z.B. "assets/ich.jpg"
+const backgroundImageURL = "assets/nikolaus_eichbühlstraße.png"; // besser: ohne Umlaute umbenennen
 const playerImageURL     = ""; // z.B. "assets/nikolaus.png"
 const goalImageURL       = ""; // z.B. "assets/gelbes-haus.png"
-if (backgroundImageURL){ document.body.style.backgroundImage = `url('${backgroundImageURL}')`; }
+if (backgroundImageURL){
+  // Umlaute/Leerzeichen sicher encoden
+  const safeURL = encodeURI(backgroundImageURL);
+  document.body.style.backgroundImage = `url('${safeURL}')`;
+}
 
 /* ==== Parameter ==== */
 const FOREST=2, WALL=1, PATH=0;
@@ -445,7 +449,7 @@ function draw(){
         cell.classList.add('player'); cell.tabIndex = 0; cell.appendChild(s);
       }
 
-      // Fog
+      // Fog – ungesehene Zellen komplett abdecken
       if (fogEnabled && !seen[r][c]) cell.classList.add('fog');
 
       mazeEl.appendChild(cell);
@@ -541,17 +545,9 @@ function detachControls(){
   mazeEl.removeEventListener('touchmove',  onTouchMove);
   mazeEl.removeEventListener('touchend',   onTouchEnd);
 }
-
-/* Utils (optional nützlich)
-function debugCountPaths(big){
-  let c=0; for(let r=0;r<big.length;r++)for(let x=0;x<big[0].length;x++) if(big[r][x]!==1)c++; return c;
-}
-*/
 </script>
 </body>
 </html>
-
-
 
 
 
