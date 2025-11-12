@@ -1,15 +1,12 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Wortsuppe – Weihnachten (Bildersuche)</title>
   <style>
-    :root{ --accent:#c54c3d; --found:#12884b; } /* <- kräftigeres Grün */
+    :root{ --accent:#c54c3d; --found:#12884b; }
 
-    /* ========================
-       === HINTERGRUNDBILD-KONFIG (Editierbar) ===
-       ======================== */
     :root{
       --bg-image: url('assets/buchstabensuppe.png');
       --bg-size:  cover;
@@ -67,7 +64,7 @@
       transition: background .12s ease, box-shadow .12s ease, transform .12s ease, font-size .12s ease, color .12s ease, text-shadow .12s ease;
     }
 
-    /* >>> Deutlichere Markierung für gefundene Wörter <<< */
+    /* deutlich sichtbare grüne Markierung */
     .cell.locked{
       background: var(--found);
       color:#fff;
@@ -89,7 +86,6 @@
       }
     }
 
-    /* Auswahl/Vorschau */
     .cell.preview{
       background:#ffd9cc;
       box-shadow: inset 0 0 0 2px #ff936f;
@@ -112,7 +108,7 @@
       .cell.locked{ font-size:1.3rem; }
     }
 
-    /* Bilder-Tafel */
+    /* Bildertafel */
     .pics h2{ margin:.2rem 0 .6rem; }
     .hint{ font-size:.95rem; color:#555; margin:.25rem 0 .75rem; }
     .picgrid{
@@ -244,13 +240,28 @@
       }
     }
 
+    // -----------------------------
+    // Bilderanzeige mit Fehlerdiagnose
+    // -----------------------------
     function renderPictures(){
       picGridEl.innerHTML='';
       for(const it of IMAGES){
         const box=document.createElement('div');
-        box.className='pic';box.id='pic_'+it.word;
+        box.className='pic'; box.id='pic_'+it.word;
+
         const img=document.createElement('img');
-        img.src=it.src;img.alt=it.word;
+        img.src = it.src;
+        img.alt = it.word;
+
+        // Wenn Bild nicht geladen werden kann, Hinweis anzeigen
+        img.addEventListener('error', () => {
+          box.style.outline = '3px solid #c54c3d';
+          box.title = `Bild nicht gefunden: ${it.src}`;
+          box.innerHTML = `<span style="font:600 12px/1.2 system-ui; color:#c54c3d; text-align:center; padding:6px;">❌<br>${it.src}</span>`;
+        });
+
+        img.addEventListener('load', () => { box.title = it.src; });
+
         box.appendChild(img);
         picGridEl.appendChild(box);
       }
