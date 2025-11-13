@@ -23,7 +23,6 @@
     background-attachment:fixed;
   }
 
-  /* leichte Abdunklung darüber (unter Content) */
   .bg-overlay{
     position:fixed;
     inset:0;
@@ -32,13 +31,13 @@
     z-index:0;
   }
 
-  /* Gesamter Inhalt liegt über dem Hintergrund */
   html, body{
     margin:0;
     padding:0;
     height:100%;
   }
-  /* BODY scrollt NICHT, nur .page */
+
+  /* Body scrollt nicht, nur .page */
   body{
     min-height:100vh;
     font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
@@ -47,7 +46,7 @@
     overflow:hidden;
   }
 
-  /* In diesem Container scrollt alles */
+  /* Scrollbarer Inhalt */
   .page{
     position:relative;
     height:100vh;
@@ -121,7 +120,7 @@
     .btn{ width:46px; height:46px; font-size:18px; }
   }
 
-  /* === Party-Overlay === */
+  /* Party-Overlay */
   .party{
     position:fixed; inset:0; display:none; place-items:center;
     pointer-events:none; z-index:999;
@@ -152,11 +151,9 @@
 </head>
 <body>
 
-<!-- Fixierter Hintergrund & Overlay -->
 <div id="bg" class="bg-fixed" aria-hidden="true"></div>
 <div class="bg-overlay" aria-hidden="true"></div>
 
-<!-- Scrollbarer Inhalt -->
 <div class="page">
   <header>
     <h1>6. Dezember – Nikolaus im harten Labyrinth</h1>
@@ -165,7 +162,8 @@
   </header>
 
   <main class="wrap">
-    
+    <div class="bar"><button id="regen">Neu erzeugen</button></div>
+
     <div class="frame" id="frame">
       <div id="maze" class="maze" aria-label="Labyrinth" role="grid" tabindex="0"></div>
     </div>
@@ -184,10 +182,9 @@
     <div class="win" id="win" style="display:none">Geschafft! Merke dir den Buchstaben: <strong id="letter">N</strong></div>
   </main>
 
- 
+  <footer><p><a href="index.html">Zurück zum Kalender</a></p></footer>
 </div>
 
-<!-- Party Layer -->
 <div id="confetti" class="confetti" aria-hidden="true"></div>
 <div id="party" class="party" role="status" aria-live="polite">
   <div class="message" id="partyMsg">🎉 Geschafft! Nikolaus hat das Haus gefunden. Merke dir den Buchstaben: <strong>N</strong> 🎉</div>
@@ -196,13 +193,13 @@
 <script>
 /* ==== Bilder ==== */
 const backgroundImageURL = "assets/nikolaus_map.png";
-const playerImageURL     = ""; // optional: "assets/nikolaus.png"
-const goalImageURL       = ""; // optional: "assets/gelbes-haus.png"
+const playerImageURL     = ""; // optional
+const goalImageURL       = ""; // optional
 const bgEl               = document.getElementById('bg');
 
 if (backgroundImageURL){
   const safeURL = encodeURI(backgroundImageURL);
-  bgEl.style.backgroundImage = `url('${safeURL}')`;
+  bgEl.style.backgroundImage = "url('" + safeURL + "')";
 }
 
 /* ==== DEIN 29×29-Level ==== */
@@ -240,19 +237,14 @@ const LEVEL = [
 /* ==== Parameter ==== */
 const FOREST=2, WALL=1, PATH=0;
 const SIZE = 29;
-let GRID = SIZE + 2; // Außenwald-Rand
+let GRID = SIZE + 2;
 let grid, position, goal;
-
-/* Taschenlampe */
 let lampOn = false;
 const FOG_RADIUS = 2;
-
-/* Sichtbarkeits-Speicher */
 let visited;
 
 /* DOM */
 const mazeEl   = document.getElementById('maze');
-const frameEl  = document.getElementById('frame');
 const regenBtn = document.getElementById('regen');
 const fogBtn   = document.getElementById('fogToggle');
 const upBtn    = document.querySelector('.up');
@@ -271,37 +263,34 @@ fogBtn.addEventListener('click', function(){
   fogBtn.setAttribute('aria-pressed', String(lampOn));
   draw();
 });
-window.addEventListener('resize', function(){ fitCellSize(true); });
 partyEl.addEventListener('click', hideParty);
 
-/* Init */
+/* Start */
 generateAndDraw();
+attachControls();
 
 /* ==== Pipeline ==== */
 function generateAndDraw(){
   GRID = SIZE + 2;
   document.documentElement.style.setProperty('--cols', String(GRID));
 
-  const carve = copyLevel(LEVEL); // genau dein Level
+  const carve = copyLevel(LEVEL);
   const midCol = Math.floor(SIZE/2);
   const bestEntranceColInner = pickEntranceFromTopRow(carve, midCol);
   const entranceColBig = bestEntranceColInner + 1;
 
-  var result = buildBigGrid(carve, entranceColBig);
+  const result = buildBigGrid(carve, entranceColBig);
   grid = result.grid;
   position = result.position;
-
-  goal = computeFarthestGoal(grid, position); // längster Weg im bestehenden Level
+  goal = computeFarthestGoal(grid, position);
 
   visited = new Set();
   visited.add(position.r + "," + position.c);
 
-  fitCellSize(true);
   draw();
-  attachControls();
 }
 
-/* ==== Helfer für Level ==== */
+/* ==== Helfer ==== */
 function copyLevel(arr){
   return arr.map(function(row){ return row.slice(); });
 }
@@ -316,47 +305,52 @@ function pickEntranceFromTopRow(carve, centerC){
     carve[0][c]=PATH; return c;
   }
   let best=candidates[0], bestD=-1;
-  for (const c of candidates){
+  for (let i=0;i<candidates.length;i++){
+    const c = candidates[i];
     const d=Math.abs(c-centerC);
     if (d>bestD){ bestD=d; best=c; }
   }
   return best;
 }
 
-/* ==== Big grid mit Außenwald ==== */
 function buildBigGrid(carve, entranceColBig){
   const n=carve.length;
-  const big = Array.from({length:n+2}, function(_,R){
-    return Array.from({length:n+2}, function(_,C){
-      if (R===0||C===0||R===n+1||C===n+1) return FOREST;
-      return carve[R-1][C-1];
-    });
-  });
-  // Öffnung oben im Wald
+  const big = [];
+  for(let R=0; R<n+2; R++){
+    const row = [];
+    for(let C=0; C<n+2; C++){
+      if (R===0||C===0||R===n+1||C===n+1) row.push(FOREST);
+      else row.push(carve[R-1][C-1]);
+    }
+    big.push(row);
+  }
   big[0][entranceColBig]=PATH;
   big[1][entranceColBig]=PATH;
   const start = { r: 0, c: entranceColBig };
   return { grid: big, position:start };
 }
 
-/* Ziel = am weitesten entfernte Zelle vom Start (nur PATH) */
 function computeFarthestGoal(grid, start){
   const rows=grid.length, cols=grid[0].length;
-  const dist=Array.from({length:rows}, function(){ return Array(cols).fill(-1); });
+  const dist=[];
+  for(let r=0;r<rows;r++){
+    const row = new Array(cols);
+    for(let c=0;c<cols;c++) row[c]=-1;
+    dist.push(row);
+  }
   const q=[];
   dist[start.r][start.c]=0;
   q.push({r:start.r,c:start.c});
   let best={r:start.r,c:start.c};
-
   const DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
 
   while(q.length){
-    const current = q.shift();
-    const r = current.r, c = current.c;
+    const cur=q.shift();
+    const r=cur.r, c=cur.c;
     const d=dist[r][c];
     if (d>dist[best.r][best.c]) best={r:r,c:c};
-    for (const dir of DIRS){
-      const dr = dir[0], dc = dir[1];
+    for(let i=0;i<DIRS.length;i++){
+      const dr=DIRS[i][0], dc=DIRS[i][1];
       const nr=r+dr, nc=c+dc;
       if(nr<0||nc<0||nr>=rows||nc>=cols) continue;
       if(grid[nr][nc]!==PATH) continue;
@@ -368,46 +362,7 @@ function computeFarthestGoal(grid, start){
   return best;
 }
 
-/* ==== Sizing ==== */
-function fitCellSize(onlySize){
-  const vh = window.visualViewport ? window.visualViewport.height : Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-  const vw = window.visualViewport ? window.visualViewport.width  : Math.max(document.documentElement.clientWidth,  window.innerWidth  || 0);
-
-  // KEIN optional chaining, kein Spread
-  const headerEl   = document.querySelector('header');
-  const controlsEl = document.querySelector('.controls');
-  const winEl      = document.getElementById('win');
-
-  const headerH   = headerEl   ? headerEl.offsetHeight   : 0;
-  const controlsH = controlsEl ? controlsEl.offsetHeight : 0;
-  const winH      = winEl      ? winEl.offsetHeight      : 0;
-
-  const barList = document.querySelectorAll('.bar');
-  let bars = 0;
-  for (let i=0; i<barList.length; i++){
-    bars += barList[i].offsetHeight;
-  }
-
-  const availW = Math.max(200, vw - 20);
-  const availH = Math.max(200, vh - (headerH + bars + controlsH + winH + 20));
-
-  const cols = GRID || parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols')) || 1;
-
-  const cellByW = Math.floor(availW / cols) - 1;
-  const cellByH = Math.floor(availH / cols) - 1;
-
-  const cell = Math.max(8, Math.min(22, Math.min(cellByW, cellByH)));
-  const gap  = cell < 16 ? 1 : 2;
-
-  document.documentElement.style.setProperty('--cell', cell + 'px');
-  document.documentElement.style.setProperty('--gap',  gap  + 'px');
-
-  frameEl.style.maxHeight = 'none';
-
-  if (!onlySize && GRID){ draw(); }
-}
-
-/* ==== Sichtbarkeit / Render ==== */
+/* ==== Render / Sicht ==== */
 function draw(){
   const vis = computeVisibilityStates();
   const seenEver = vis.seenEver;
@@ -467,8 +422,13 @@ function draw(){
 }
 
 function computeVisibilityStates(){
-  const seenEver = Array.from({length:GRID}, function(){ return Array(GRID).fill(false); });
-  const fringeNow = Array.from({length:GRID}, function(){ return Array(GRID).fill(false); });
+  const seenEver = [];
+  const fringeNow = [];
+  for(let r=0;r<GRID;r++){
+    const row1=[], row2=[];
+    for(let c=0;c<GRID;c++){ row1.push(false); row2.push(false); }
+    seenEver.push(row1); fringeNow.push(row2);
+  }
 
   if (lampOn){
     for (let r=0;r<GRID;r++) for (let c=0;c<GRID;c++) seenEver[r][c]=true;
@@ -542,7 +502,7 @@ function spawnConfetti(n){
   }
 }
 
-/* Bewegung & Win */
+/* ==== Bewegung & Steuerung ==== */
 function canMove(r,c){
   return !(r<0||c<0||r>=GRID||c>=GRID) && grid[r][c]!==WALL;
 }
@@ -555,12 +515,10 @@ function move(dr,dc){
   if(position.r===goal.r && position.c===goal.c){
     document.getElementById('win').style.display='block';
     document.getElementById('letter').textContent='N';
-    detachControls();
     showParty();
   }
 }
 
-/* Tastatur */
 function keyHandler(e){
   const k=e.key.toLowerCase();
   if(k==='arrowup' || k==='w') move(-1,0);
@@ -569,14 +527,14 @@ function keyHandler(e){
   else if(k==='arrowright' || k==='d') move(0,1);
 }
 
-/* Touch – horizontale Wischgeste bewegt die Figur */
+/* Touch – horizontale Wischgeste */
 let sx=0, sy=0, st=0;
 const SWIPE_MIN=22, SWIPE_MAXT=600;
 function onTouchStart(e){
   if (!e.touches || e.touches.length!==1) return;
   sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=Date.now();
 }
-function onTouchMove(e){ /* pan-y erlaubt */ }
+function onTouchMove(e){}
 function onTouchEnd(e){
   const dt=Date.now()-st; if(dt>SWIPE_MAXT) return;
   const t=e.changedTouches && e.changedTouches[0]; if(!t) return;
@@ -589,7 +547,6 @@ function onTouchEnd(e){
 }
 
 function attachControls(){
-  detachControls();
   document.addEventListener('keydown', keyHandler);
   mazeEl.addEventListener('touchstart', onTouchStart, {passive:true});
   mazeEl.addEventListener('touchmove',  onTouchMove,  {passive:true});
@@ -599,17 +556,9 @@ function attachControls(){
   leftBtn.onclick  = function(){ move( 0,-1); };
   rightBtn.onclick = function(){ move( 0, 1); };
 }
-function detachControls(){
-  document.removeEventListener('keydown', keyHandler);
-  mazeEl.removeEventListener('touchstart', onTouchStart);
-  mazeEl.removeEventListener('touchmove',  onTouchMove);
-  mazeEl.removeEventListener('touchend',   onTouchEnd);
-}
 </script>
-
 </body>
 </html>
-
 
 
 
