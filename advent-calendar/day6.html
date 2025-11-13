@@ -12,15 +12,15 @@
     --player-scale: 1.2; --goal-scale: 1.05;
   }
 
-  /* Fixierter Hintergrund als eigene Ebene (funktioniert stabil mobil) */
+  /* Fixierter Hintergrund als eigene Ebene */
   .bg-fixed{
     position:fixed;
     inset:0;
     z-index:0;
     background-repeat:no-repeat;
-    background-size: 'cover';             /* JS setzt später 75% auto */
+    background-size:cover;          /* füllt die ganze Fläche */
     background-position:center;
-    background-attachment:fixed;      /* falls Browser das respektiert */
+    background-attachment:fixed;
   }
 
   /* leichte Abdunklung darüber (unter Content) */
@@ -41,7 +41,7 @@
     min-height:100vh;
     font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     color:#111;
-    background:none; /* wichtig: kein Body-Background mehr */
+    background:none;
   }
   header,main,footer{ position:relative; z-index:1; }
   header,footer{padding:10px 8px; text-align:center}
@@ -62,7 +62,6 @@
   .bar{display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap}
   .bar button{padding:8px 12px; border-radius:10px; border:1px solid #b8c1cc; background:#fff; font:inherit; cursor:pointer;}
 
-  /* Frame scrollt NICHT mehr intern – so passt das Grid immer voll ins Sichtfenster */
   .frame{
     padding:6px; border-radius:14px; background:rgba(255,255,255,.65);
     box-shadow:0 10px 28px rgba(0,0,0,.18), inset 0 0 0 2px var(--grid-outline);
@@ -183,21 +182,15 @@
 <script>
 /* ==== Bilder ==== */
 const backgroundImageURL = "assets/nikolaus_map.png";
-const playerImageURL     = ""; // z.B. "assets/nikolaus.png"
-const goalImageURL       = ""; // z.B. "assets/gelbes-haus.png"
+const playerImageURL     = ""; // optional: "assets/nikolaus.png"
+const goalImageURL       = ""; // optional: "assets/gelbes-haus.png"
 const bgEl               = document.getElementById('bg');
 
 if (backgroundImageURL){
   const safeURL = encodeURI(backgroundImageURL);
-  // Hintergrund auf FIXIERTE Ebene setzen (nicht auf body)
-  bgEl.style.backgroundImage    = `url('${safeURL}')`;
-  // HIER: genau wie bei dir früher
-  bgEl.style.backgroundSize     = '75% auto';   // 75 %
-  bgEl.style.backgroundPosition = '50% 18%';    // Y = 18 %
+  bgEl.style.backgroundImage = `url('${safeURL}')`;
+  // kein Überschreiben der Größe mehr – CSS: cover
 }
-
-/* ==== Dein Level verwenden ==== */
-const USE_LEVEL = true;
 
 /* ==== DEIN 29×29-Level ==== */
 const LEVEL = [
@@ -234,7 +227,7 @@ const LEVEL = [
 /* ==== Parameter ==== */
 const FOREST=2, WALL=1, PATH=0;
 const SIZE = 29;
-let GRID = 0;
+let GRID = SIZE + 2; // Außenwald-Rand
 let grid, position, goal;
 
 /* Taschenlampe */
@@ -276,17 +269,13 @@ function generateAndDraw(){
   GRID = SIZE + 2;
   document.documentElement.style.setProperty('--cols', String(GRID));
 
-  let carve;
-  if (USE_LEVEL && isValidLevel(LEVEL)) {
-    carve = copyLevel(LEVEL);
-  } else {
-    carve = buildMazeComplex(SIZE);
-  }
-
-  const mid = { r: Math.floor(SIZE/2), c: Math.floor(SIZE/2) };
-  const bestEntranceColInner = pickEntranceFromTopRow(carve, mid.c);
+  const carve = copyLevel(LEVEL); // genau dein Level
+  const midCol = Math.floor(SIZE/2);
+  const bestEntranceColInner = pickEntranceFromTopRow(carve, midCol);
   const entranceColBig = bestEntranceColInner + 1;
-  ({grid, position, goal} = buildBigGrid(carve, entranceColBig, mid));
+
+  ({grid, position} = buildBigGrid(carve, entranceColBig));
+  goal = computeFarthestGoal(grid, position); // längster Weg im bestehenden Level
 
   visited = new Set();
   visited.add(`${position.r},${position.c}`);
@@ -296,24 +285,17 @@ function generateAndDraw(){
   attachControls();
 }
 
-/* ==== Level-Helfer ==== */
-function isValidLevel(arr){
-  if (!Array.isArray(arr) || arr.length !== SIZE) return false;
-  for (const row of arr){
-    if (!Array.isArray(row) || row.length !== SIZE) return false;
-    for (const v of row){ if (!(v===0 || v===1)) return false; }
-  }
-  return true;
-}
+/* ==== Helfer für Level ==== */
 function copyLevel(arr){ return arr.map(row => row.slice()); }
+
 function pickEntranceFromTopRow(carve, centerC){
   const candidates = [];
   for (let c=0;c<SIZE;c++){
-    if (carve[1][c]===PATH) candidates.push(c);
+    if (carve[0][c]===PATH) candidates.push(c);
   }
   if (!candidates.length){
-    const c = Math.floor(SIZE/2);
-    carve[1][c]=PATH; return c;
+    const c = centerC;
+    carve[0][c]=PATH; return c;
   }
   let best=candidates[0], bestD=-1;
   for (const c of candidates){
@@ -323,67 +305,8 @@ function pickEntranceFromTopRow(carve, centerC){
   return best;
 }
 
-/* ==== Generator (Fallback) ==== */
-function buildMazeComplex(n){
-  if (n % 2 === 0) n -= 1;
-  const rows=n, cols=n;
-  const carve = Array.from({length: rows}, () => Array.from({length: cols}, () => WALL));
-  const inBounds = (r,c) => r>0 && c>0 && r<rows-1 && c<cols-1;
-
-  let r = 1, c = Math.floor(cols/2);
-  carve[r][c] = PATH;
-
-  const stack = [[r,c]];
-  const DIRS = [[-2,0],[2,0],[0,-2],[0,2]];
-  let last = -1;
-
-  while (stack.length){
-    const [cr,cc] = stack[stack.length-1];
-    const cand = [];
-    for (let i=0;i<DIRS.length;i++){
-      const [dr,dc]=DIRS[i], nr=cr+dr, nc=cc+dc;
-      if (inBounds(nr,nc) && carve[nr][nc]===WALL) cand.push({i,nr,nc,mr:dr/2,mc:dc/2});
-    }
-    if (cand.length){
-      cand.sort((a,b)=>{
-        const aTurn=(a.i===last)?1:0, bTurn=(b.i===last)?1:0;
-        if (aTurn!==bTurn) return aTurn - bTurn;
-        return Math.random()-0.5;
-      });
-      const p=cand[0];
-      carve[cr+p.mr][cc+p.mc]=PATH;
-      carve[p.nr][p.nc]=PATH;
-      stack.push([p.nr,p.nc]); last=p.i;
-    } else { stack.pop(); last=-1; }
-  }
-
-  // Extra-Gänge
-  const spurChance = 0.42;
-  for (let rr=1; rr<rows-1; rr++){
-    for (let cc=1; cc<cols-1; cc++){
-      if (carve[rr][cc]!==PATH || Math.random()>=spurChance) continue;
-      const dirs = [[-2,0],[2,0],[0,-2],[0,2]].sort(()=>Math.random()-0.5);
-      for (const [dr,dc] of dirs){
-        const a1=rr+dr/2, b1=cc+dc/2;
-        const a2=rr+dr,   b2=cc+dc;
-        if (!(a1>0&&b1>0&&a1<rows-1&&b1<cols-1)) continue;
-        if (!(a2>0&&b2>0&&a2<rows-1&&b2<cols-1)) continue;
-        if (carve[a1][b1]===WALL && carve[a2][b2]===WALL){
-          carve[a1][b1]=PATH;
-          if (Math.random()<0.85){ carve[a2][b2]=PATH;
-            const a3=a2+dr/2, b3=b2+dc/2;
-            if (Math.random()<0.35 && a3>0&&b3>0&&a3<rows-1&&b3<cols-1 && carve[a3][b3]===WALL){ carve[a3][b3]=PATH; }
-          }
-          break;
-        }
-      }
-    }
-  }
-  return carve;
-}
-
-/* ==== Big grid ==== */
-function buildBigGrid(carve, entranceColBig, mid){
+/* ==== Big grid mit Außenwald ==== */
+function buildBigGrid(carve, entranceColBig){
   const n=carve.length;
   const big = Array.from({length:n+2},(_,R)=>
     Array.from({length:n+2},(_,C)=>{
@@ -391,15 +314,42 @@ function buildBigGrid(carve, entranceColBig, mid){
       return carve[R-1][C-1];
     })
   );
+  // Öffnung oben im Wald
+  big[0][entranceColBig]=PATH;
   big[1][entranceColBig]=PATH;
   const start = { r: 0, c: entranceColBig };
-  const g     = { r: mid.r+1, c: mid.c+1 };
-  return { grid: big, position:start, goal:g };
+  return { grid: big, position:start };
+}
+
+/* Ziel = am weitesten entfernte Zelle vom Start (nur PATH) */
+function computeFarthestGoal(grid, start){
+  const rows=grid.length, cols=grid[0].length;
+  const dist=Array.from({length:rows},()=>Array(cols).fill(-1));
+  const q=[];
+  dist[start.r][start.c]=0;
+  q.push({r:start.r,c:start.c});
+  let best={r:start.r,c:start.c};
+
+  const DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
+
+  while(q.length){
+    const {r,c}=q.shift();
+    const d=dist[r][c];
+    if (d>dist[best.r][best.c]) best={r,c};
+    for (const [dr,dc] of DIRS){
+      const nr=r+dr, nc=c+dc;
+      if(nr<0||nc<0||nr>=rows||nc>=cols) continue;
+      if(grid[nr][nc]!==PATH) continue;
+      if(dist[nr][nc]!==-1) continue;
+      dist[nr][nc]=d+1;
+      q.push({r:nr,c:nc});
+    }
+  }
+  return best;
 }
 
 /* ==== Sizing ==== */
 function fitCellSize(onlySize){
-  // verfügbares Maß: echtes sichtbares Viewportmaß (mobil-freundlich)
   const vh = window.visualViewport ? window.visualViewport.height : Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
   const vw = window.visualViewport ? window.visualViewport.width  : Math.max(document.documentElement.clientWidth,  window.innerWidth  || 0);
 
@@ -408,17 +358,15 @@ function fitCellSize(onlySize){
   const controlsH = document.querySelector('.controls')?.offsetHeight || 0;
   const winH      = document.getElementById('win')?.offsetHeight || 0;
 
-  // Wir wollen, dass das ganze Grid OHNE internes Scrollen sichtbar ist:
   const availW = Math.max(200, vw - 20);
   const availH = Math.max(200, vh - (headerH + bars + controlsH + winH + 20));
 
   const cols = GRID || parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols')) || 1;
 
-  // Zelle so berechnen, dass Grid in beide Richtungen passt
   const cellByW = Math.floor(availW / cols) - 1;
   const cellByH = Math.floor(availH / cols) - 1;
 
-  const cell = Math.max(8, Math.min(22, Math.min(cellByW, cellByH))); // erlaubt kleiner auf Handy
+  const cell = Math.max(8, Math.min(22, Math.min(cellByW, cellByH)));
   const gap  = cell < 16 ? 1 : 2;
 
   document.documentElement.style.setProperty('--cell', cell + 'px');
@@ -429,7 +377,7 @@ function fitCellSize(onlySize){
   if (!onlySize && GRID){ draw(); }
 }
 
-/* ==== Render ==== */
+/* ==== Sichtbarkeit / Render ==== */
 function draw(){
   const { seenEver, fringeNow } = computeVisibilityStates();
   mazeEl.innerHTML = '';
@@ -472,7 +420,6 @@ function draw(){
   focusPlayer();
 }
 
-/* Sichtzustände */
 function computeVisibilityStates(){
   const seenEver = Array.from({length:GRID},()=>Array(GRID).fill(false));
   const fringeNow = Array.from({length:GRID},()=>Array(GRID).fill(false));
@@ -604,6 +551,7 @@ function detachControls(){
 </script>
 </body>
 </html>
+
 
 
 
