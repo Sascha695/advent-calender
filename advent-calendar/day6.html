@@ -265,13 +265,13 @@ const confettiEl = document.getElementById('confetti');
 
 /* Events */
 regenBtn.addEventListener('click', generateAndDraw);
-fogBtn.addEventListener('click', () => {
+fogBtn.addEventListener('click', function(){
   lampOn = !lampOn;
   fogBtn.textContent = lampOn ? 'Sichtfeld AUS' : 'Sichtfeld AN';
   fogBtn.setAttribute('aria-pressed', String(lampOn));
   draw();
 });
-window.addEventListener('resize', ()=>fitCellSize(true));
+window.addEventListener('resize', function(){ fitCellSize(true); });
 partyEl.addEventListener('click', hideParty);
 
 /* Init */
@@ -287,11 +287,14 @@ function generateAndDraw(){
   const bestEntranceColInner = pickEntranceFromTopRow(carve, midCol);
   const entranceColBig = bestEntranceColInner + 1;
 
-  ({grid, position} = buildBigGrid(carve, entranceColBig));
+  var result = buildBigGrid(carve, entranceColBig);
+  grid = result.grid;
+  position = result.position;
+
   goal = computeFarthestGoal(grid, position); // längster Weg im bestehenden Level
 
   visited = new Set();
-  visited.add(`${position.r},${position.c}`);
+  visited.add(position.r + "," + position.c);
 
   fitCellSize(true);
   draw();
@@ -299,7 +302,9 @@ function generateAndDraw(){
 }
 
 /* ==== Helfer für Level ==== */
-function copyLevel(arr){ return arr.map(row => row.slice()); }
+function copyLevel(arr){
+  return arr.map(function(row){ return row.slice(); });
+}
 
 function pickEntranceFromTopRow(carve, centerC){
   const candidates = [];
@@ -321,12 +326,12 @@ function pickEntranceFromTopRow(carve, centerC){
 /* ==== Big grid mit Außenwald ==== */
 function buildBigGrid(carve, entranceColBig){
   const n=carve.length;
-  const big = Array.from({length:n+2},(_,R)=>
-    Array.from({length:n+2},(_,C)=>{
+  const big = Array.from({length:n+2}, function(_,R){
+    return Array.from({length:n+2}, function(_,C){
       if (R===0||C===0||R===n+1||C===n+1) return FOREST;
       return carve[R-1][C-1];
-    })
-  );
+    });
+  });
   // Öffnung oben im Wald
   big[0][entranceColBig]=PATH;
   big[1][entranceColBig]=PATH;
@@ -337,7 +342,7 @@ function buildBigGrid(carve, entranceColBig){
 /* Ziel = am weitesten entfernte Zelle vom Start (nur PATH) */
 function computeFarthestGoal(grid, start){
   const rows=grid.length, cols=grid[0].length;
-  const dist=Array.from({length:rows},()=>Array(cols).fill(-1));
+  const dist=Array.from({length:rows}, function(){ return Array(cols).fill(-1); });
   const q=[];
   dist[start.r][start.c]=0;
   q.push({r:start.r,c:start.c});
@@ -346,10 +351,12 @@ function computeFarthestGoal(grid, start){
   const DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
 
   while(q.length){
-    const {r,c}=q.shift();
+    const current = q.shift();
+    const r = current.r, c = current.c;
     const d=dist[r][c];
-    if (d>dist[best.r][best.c]) best={r,c};
-    for (const [dr,dc] of DIRS){
+    if (d>dist[best.r][best.c]) best={r:r,c:c};
+    for (const dir of DIRS){
+      const dr = dir[0], dc = dir[1];
       const nr=r+dr, nc=c+dc;
       if(nr<0||nc<0||nr>=rows||nc>=cols) continue;
       if(grid[nr][nc]!==PATH) continue;
@@ -366,10 +373,20 @@ function fitCellSize(onlySize){
   const vh = window.visualViewport ? window.visualViewport.height : Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
   const vw = window.visualViewport ? window.visualViewport.width  : Math.max(document.documentElement.clientWidth,  window.innerWidth  || 0);
 
-  const headerH   = document.querySelector('header')?.offsetHeight || 0;
-  const bars      = [...document.querySelectorAll('.bar')].reduce((h,el)=>h+el.offsetHeight,0);
-  const controlsH = document.querySelector('.controls')?.offsetHeight || 0;
-  const winH      = document.getElementById('win')?.offsetHeight || 0;
+  // KEIN optional chaining, kein Spread
+  const headerEl   = document.querySelector('header');
+  const controlsEl = document.querySelector('.controls');
+  const winEl      = document.getElementById('win');
+
+  const headerH   = headerEl   ? headerEl.offsetHeight   : 0;
+  const controlsH = controlsEl ? controlsEl.offsetHeight : 0;
+  const winH      = winEl      ? winEl.offsetHeight      : 0;
+
+  const barList = document.querySelectorAll('.bar');
+  let bars = 0;
+  for (let i=0; i<barList.length; i++){
+    bars += barList[i].offsetHeight;
+  }
 
   const availW = Math.max(200, vw - 20);
   const availH = Math.max(200, vh - (headerH + bars + controlsH + winH + 20));
@@ -392,7 +409,10 @@ function fitCellSize(onlySize){
 
 /* ==== Sichtbarkeit / Render ==== */
 function draw(){
-  const { seenEver, fringeNow } = computeVisibilityStates();
+  const vis = computeVisibilityStates();
+  const seenEver = vis.seenEver;
+  const fringeNow = vis.fringeNow;
+
   mazeEl.innerHTML = '';
   for (let r=0; r<GRID; r++){
     for (let c=0; c<GRID; c++){
@@ -404,19 +424,32 @@ function draw(){
         if (goalImageURL){
           const s = document.createElement('div');
           s.className = 'goal-sprite';
-          s.style.backgroundImage = `url('${goalImageURL}')`;
+          s.style.backgroundImage = "url('" + goalImageURL + "')";
           cell.appendChild(s);
-        } else { cell.classList.add('fallback'); }
-      } else if (v===WALL) { cell.className = 'cell wall';
-      } else if (v===FOREST) { cell.className = 'cell forest';
-      } else { cell.className = 'cell path'; }
+        } else {
+          cell.classList.add('fallback');
+        }
+      } else if (v===WALL) {
+        cell.className = 'cell wall';
+      } else if (v===FOREST) {
+        cell.className = 'cell forest';
+      } else {
+        cell.className = 'cell path';
+      }
 
       if (r===position.r && c===position.c){
         const s = document.createElement('div');
-        if (playerImageURL){ s.className = 'sprite'; s.style.backgroundImage = `url('${playerImageURL}')`; }
-        else { s.className = 'sprite emoji'; s.textContent = '🎅'; }
+        if (playerImageURL){
+          s.className = 'sprite';
+          s.style.backgroundImage = "url('" + playerImageURL + "')";
+        } else {
+          s.className = 'sprite emoji';
+          s.textContent = '🎅';
+        }
         s.setAttribute('aria-hidden','true');
-        cell.classList.add('player'); cell.tabIndex = 0; cell.appendChild(s);
+        cell.classList.add('player');
+        cell.tabIndex = 0;
+        cell.appendChild(s);
       }
 
       if (!lampOn){
@@ -434,19 +467,21 @@ function draw(){
 }
 
 function computeVisibilityStates(){
-  const seenEver = Array.from({length:GRID},()=>Array(GRID).fill(false));
-  const fringeNow = Array.from({length:GRID},()=>Array(GRID).fill(false));
+  const seenEver = Array.from({length:GRID}, function(){ return Array(GRID).fill(false); });
+  const fringeNow = Array.from({length:GRID}, function(){ return Array(GRID).fill(false); });
 
   if (lampOn){
     for (let r=0;r<GRID;r++) for (let c=0;c<GRID;c++) seenEver[r][c]=true;
-    return { seenEver, fringeNow };
+    return { seenEver: seenEver, fringeNow: fringeNow };
   }
 
   if (visited){
-    for (const key of visited){
-      const [r,c] = key.split(',').map(Number);
+    visited.forEach(function(key){
+      const parts = key.split(',');
+      const r = parseInt(parts[0],10);
+      const c = parseInt(parts[1],10);
       if (r>=0 && c>=0 && r<GRID && c<GRID) seenEver[r][c]=true;
-    }
+    });
   }
 
   const R = position.r, C = position.c;
@@ -454,18 +489,21 @@ function computeVisibilityStates(){
     for (let c=C-FOG_RADIUS; c<=C+FOG_RADIUS; c++){
       if (r>=0 && c>=0 && r<GRID && c<GRID){
         if (Math.max(Math.abs(r-R), Math.abs(c-C)) <= FOG_RADIUS){
-          if (!visited.has(`${r},${c}`)) fringeNow[r][c] = true;
+          const key = r + "," + c;
+          if (!visited.has(key)) fringeNow[r][c] = true;
           seenEver[r][c] = true;
         }
       }
     }
   }
-  return { seenEver, fringeNow };
+  return { seenEver: seenEver, fringeNow: fringeNow };
 }
 
 function focusPlayer(){
   const p = mazeEl.querySelector('.player');
-  if (p) p.focus({preventScroll:true});
+  if (p && p.focus){
+    p.focus({preventScroll:true});
+  }
 }
 
 /* ==== Party ==== */
@@ -481,7 +519,8 @@ function hideParty(){
   partyEl.classList.remove('show');
   confettiEl.innerHTML = '';
 }
-function spawnConfetti(n=120){
+function spawnConfetti(n){
+  if (n === undefined) n = 120;
   confettiEl.innerHTML = '';
   const colors = ['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#22c55e','#eab308'];
   const vw = window.innerWidth;
@@ -498,18 +537,20 @@ function spawnConfetti(n=120){
     d.style.animationDelay = (Math.random()*200) + 'ms';
     const w = 8 + Math.random()*8, h = 10 + Math.random()*18;
     d.style.width = w + 'px'; d.style.height = h + 'px';
-    d.style.transform = `translate(0,-10vh) rotate(${Math.random()*60-30}deg)`;
+    d.style.transform = "translate(0,-10vh) rotate(" + (Math.random()*60-30) + "deg)";
     confettiEl.appendChild(d);
   }
 }
 
 /* Bewegung & Win */
-function canMove(r,c){ return !(r<0||c<0||r>=GRID||c>=GRID) && grid[r][c]!==WALL; }
+function canMove(r,c){
+  return !(r<0||c<0||r>=GRID||c>=GRID) && grid[r][c]!==WALL;
+}
 function move(dr,dc){
   const nr=position.r+dr, nc=position.c+dc;
   if(!canMove(nr,nc)) return;
   position={r:nr,c:nc};
-  visited.add(`${nr},${nc}`);
+  visited.add(nr + "," + nc);
   draw();
   if(position.r===goal.r && position.c===goal.c){
     document.getElementById('win').style.display='block';
@@ -522,16 +563,19 @@ function move(dr,dc){
 /* Tastatur */
 function keyHandler(e){
   const k=e.key.toLowerCase();
-  if(['arrowup','w'].includes(k)) move(-1,0);
-  else if(['arrowdown','s'].includes(k)) move(1,0);
-  else if(['arrowleft','a'].includes(k)) move(0,-1);
-  else if(['arrowright','d'].includes(k)) move(0,1);
+  if(k==='arrowup' || k==='w') move(-1,0);
+  else if(k==='arrowdown' || k==='s') move(1,0);
+  else if(k==='arrowleft' || k==='a') move(0,-1);
+  else if(k==='arrowright' || k==='d') move(0,1);
 }
 
 /* Touch – horizontale Wischgeste bewegt die Figur */
 let sx=0, sy=0, st=0;
 const SWIPE_MIN=22, SWIPE_MAXT=600;
-function onTouchStart(e){ if (!e.touches || e.touches.length!==1) return; sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=Date.now(); }
+function onTouchStart(e){
+  if (!e.touches || e.touches.length!==1) return;
+  sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=Date.now();
+}
 function onTouchMove(e){ /* pan-y erlaubt */ }
 function onTouchEnd(e){
   const dt=Date.now()-st; if(dt>SWIPE_MAXT) return;
@@ -550,10 +594,10 @@ function attachControls(){
   mazeEl.addEventListener('touchstart', onTouchStart, {passive:true});
   mazeEl.addEventListener('touchmove',  onTouchMove,  {passive:true});
   mazeEl.addEventListener('touchend',   onTouchEnd,   {passive:false});
-  upBtn.onclick    = ()=>move(-1,0);
-  downBtn.onclick  = ()=>move( 1,0);
-  leftBtn.onclick  = ()=>move( 0,-1);
-  rightBtn.onclick = ()=>move( 0, 1);
+  upBtn.onclick    = function(){ move(-1,0); };
+  downBtn.onclick  = function(){ move( 1,0); };
+  leftBtn.onclick  = function(){ move( 0,-1); };
+  rightBtn.onclick = function(){ move( 0, 1); };
 }
 function detachControls(){
   document.removeEventListener('keydown', keyHandler);
@@ -562,6 +606,7 @@ function detachControls(){
   mazeEl.removeEventListener('touchend',   onTouchEnd);
 }
 </script>
+
 </body>
 </html>
 
