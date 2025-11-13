@@ -36,13 +36,25 @@
   html, body{
     margin:0;
     padding:0;
+    height:100%;
   }
+  /* BODY scrollt NICHT, nur .page */
   body{
     min-height:100vh;
     font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     color:#111;
     background:none;
+    overflow:hidden;
   }
+
+  /* In diesem Container scrollt alles */
+  .page{
+    position:relative;
+    height:100vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   header,main,footer{ position:relative; z-index:1; }
   header,footer{padding:10px 8px; text-align:center}
 
@@ -144,34 +156,37 @@
 <div id="bg" class="bg-fixed" aria-hidden="true"></div>
 <div class="bg-overlay" aria-hidden="true"></div>
 
-<header>
-  <h1>6. Dezember – Nikolaus im harten Labyrinth</h1>
-  <div class="sub">Langer Umweg ums Haus, viele Sackgassen. Außenwald bleibt sichtbar.</div>
-  <p class="intro">„Von draußen vom Walde, da komme ich her, aber ich habe leider den Weg zur Eichbühlstraße vergessen. Kannst du mir zeigen, wie ich zu deinem Haus komme?“</p>
-</header>
+<!-- Scrollbarer Inhalt -->
+<div class="page">
+  <header>
+    <h1>6. Dezember – Nikolaus im harten Labyrinth</h1>
+    <div class="sub">Langer Umweg ums Haus, viele Sackgassen. Außenwald bleibt sichtbar.</div>
+    <p class="intro">„Von draußen vom Walde, da komme ich her, aber ich habe leider den Weg zur Eichbühlstraße vergessen. Kannst du mir zeigen, wie ich zu deinem Haus komme?“</p>
+  </header>
 
-<main class="wrap">
-  <div class="bar"><button id="regen">Neu erzeugen</button></div>
+  <main class="wrap">
+    <div class="bar"><button id="regen">Neu erzeugen</button></div>
 
-  <div class="frame" id="frame">
-    <div id="maze" class="maze" aria-label="Labyrinth" role="grid" tabindex="0"></div>
-  </div>
+    <div class="frame" id="frame">
+      <div id="maze" class="maze" aria-label="Labyrinth" role="grid" tabindex="0"></div>
+    </div>
 
-  <p class="hint">Falls es zu schwer ist, dann ist hier eine Taschenlampe:</p>
-  <div class="bar"><button id="fogToggle" class="toggle" aria-pressed="false">Sichtfeld AN</button></div>
+    <p class="hint">Falls es zu schwer ist, dann ist hier eine Taschenlampe:</p>
+    <div class="bar"><button id="fogToggle" class="toggle" aria-pressed="false">Sichtfeld AN</button></div>
 
-  <div class="controls" aria-label="Pfeiltasten">
-    <button class="btn up"    aria-label="Nach oben">▲</button>
-    <button class="btn left"  aria-label="Nach links">◀</button>
-    <button class="btn"       aria-label="Zentrum" disabled>🎅</button>
-    <button class="btn right" aria-label="Nach rechts">▶</button>
-    <button class="btn down"  aria-label="Nach unten">▼</button>
-  </div>
+    <div class="controls" aria-label="Pfeiltasten">
+      <button class="btn up"    aria-label="Nach oben">▲</button>
+      <button class="btn left"  aria-label="Nach links">◀</button>
+      <button class="btn"       aria-label="Zentrum" disabled>🎅</button>
+      <button class="btn right" aria-label="Nach rechts">▶</button>
+      <button class="btn down"  aria-label="Nach unten">▼</button>
+    </div>
 
-  <div class="win" id="win" style="display:none">Geschafft! Merke dir den Buchstaben: <strong id="letter">N</strong></div>
-</main>
+    <div class="win" id="win" style="display:none">Geschafft! Merke dir den Buchstaben: <strong id="letter">N</strong></div>
+  </main>
 
-<footer><p><a href="index.html">Zurück zum Kalender</a></p></footer>
+  <footer><p><a href="index.html">Zurück zum Kalender</a></p></footer>
+</div>
 
 <!-- Party Layer -->
 <div id="confetti" class="confetti" aria-hidden="true"></div>
@@ -189,7 +204,6 @@ const bgEl               = document.getElementById('bg');
 if (backgroundImageURL){
   const safeURL = encodeURI(backgroundImageURL);
   bgEl.style.backgroundImage = `url('${safeURL}')`;
-  // kein Überschreiben der Größe mehr – CSS: cover
 }
 
 /* ==== DEIN 29×29-Level ==== */
@@ -551,6 +565,7 @@ function detachControls(){
 </script>
 </body>
 </html>
+
 
 
 
