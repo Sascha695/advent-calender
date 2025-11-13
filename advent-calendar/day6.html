@@ -14,18 +14,31 @@
 
   /* Fixierter Hintergrund als eigene Ebene (funktioniert stabil mobil) */
   .bg-fixed{
-    position:fixed; inset:0; z-index:0;
+    position:fixed;
+    inset:0;
+    z-index:0;
     background-repeat:no-repeat;
-    background-size: cover;          
-    background-position:50% 50%;       /* Y = 18% */
-    background-attachment:fixed;       /* falls Browser das respektiert */
+    background-size:auto;             /* JS setzt später 75% auto */
+    background-position:center;
+    background-attachment:fixed;      /* falls Browser das respektiert */
   }
+
   /* leichte Abdunklung darüber (unter Content) */
-  .bg-overlay{ position:fixed; inset:0; pointer-events:none; background:linear-gradient(0deg, rgba(0,0,0,.16), rgba(0,0,0,.16)); z-index:0; }
+  .bg-overlay{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:linear-gradient(0deg, rgba(0,0,0,.16), rgba(0,0,0,.16));
+    z-index:0;
+  }
 
   /* Gesamter Inhalt liegt über dem Hintergrund */
+  html, body{
+    margin:0;
+    padding:0;
+  }
   body{
-    margin:0;height:100%;
+    min-height:100vh;
     font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     color:#111;
     background:none; /* wichtig: kein Body-Background mehr */
@@ -35,7 +48,15 @@
 
   h1{margin:0 0 6px; font-size:1.1rem}
   .sub{opacity:.9; font-size:.95rem}
-  .intro{margin:8px auto 0; max-width:800px; padding:8px 10px; background:#fff; border:1px solid #dbe2ea; border-radius:10px; line-height:1.35;}
+  .intro{
+    margin:8px auto 0;
+    max-width:800px;
+    padding:8px 10px;
+    background:#fff;
+    border:1px solid #dbe2ea;
+    border-radius:10px;
+    line-height:1.35;
+  }
 
   .wrap{display:grid; place-items:center; padding:8px; gap:8px}
   .bar{display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap}
@@ -53,17 +74,33 @@
     background:#fafafaAA; border-radius:10px; isolation:isolate;
   }
 
-  .cell{ width:var(--cell); height:var(--cell); border-radius:4px; position:relative; display:grid; place-items:center;
-         user-select:none; overflow:visible; box-shadow: inset 0 0 0 1px rgba(0,0,0,.10);}
-  .wall{background:var(--wall)} .path{background:var(--path)} .path.dim{background:var(--path-dim)} .forest{background:var(--forest)}
-  .goal{background:var(--house)} .goal.fallback::after{content:"🏠"; font-size:calc(var(--cell)*0.75);} .goal.dim{filter:brightness(.85)}
-  .sprite{ position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%);
-           width:calc(var(--cell)*var(--player-scale)); height:calc(var(--cell)*var(--player-scale));
-           display:grid; place-items:center; background-repeat:no-repeat; background-size:contain; background-position:center; pointer-events:none; text-shadow:0 1px 2px rgba(0,0,0,.35); }
+  .cell{
+    width:var(--cell); height:var(--cell); border-radius:4px; position:relative; display:grid; place-items:center;
+    user-select:none; overflow:visible; box-shadow: inset 0 0 0 1px rgba(0,0,0,.10);
+  }
+  .wall{background:var(--wall)}
+  .path{background:var(--path)}
+  .path.dim{background:var(--path-dim)}
+  .forest{background:var(--forest)}
+  .goal{background:var(--house)}
+  .goal.fallback::after{content:"🏠"; font-size:calc(var(--cell)*0.75);}
+  .goal.dim{filter:brightness(.85)}
+
+  .sprite{
+    position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%);
+    width:calc(var(--cell)*var(--player-scale)); height:calc(var(--cell)*var(--player-scale));
+    display:grid; place-items:center; background-repeat:no-repeat; background-size:contain; background-position:center; pointer-events:none; text-shadow:0 1px 2px rgba(0,0,0,.35);
+  }
   .sprite.emoji{ font-size:calc(var(--cell)*var(--player-scale)*0.9); }
-  .goal-sprite{ position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%);
-                width:calc(var(--cell)*var(--goal-scale)); height:calc(var(--cell)*var(--goal-scale)); background-repeat:no-repeat; background-size:contain; background-position:center; pointer-events:none; }
-  .fog{ background:#0b1220 !important; box-shadow:none !important; } .fog::after{display:none} .fog>*{display:none !important}
+  .goal-sprite{
+    position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%);
+    width:calc(var(--cell)*var(--goal-scale)); height:calc(var(--cell)*var(--goal-scale)); background-repeat:no-repeat; background-size:contain; background-position:center; pointer-events:none;
+  }
+
+  .fog{ background:#0b1220 !important; box-shadow:none !important; }
+  .fog::after{display:none}
+  .fog>*{display:none !important}
+
   .hint{ font-size:.9rem; opacity:.9; margin:2px 0 0; text-align:center; }
   .controls{ display:grid; grid-template-areas: ". up ." "left center right" ". down ."; gap:8px; touch-action:none; }
   .btn{ grid-area:center; width:52px;height:52px;border-radius:12px;border:1px solid #b8c1cc;background:#fff;font-size:20px; }
@@ -153,15 +190,16 @@ const bgEl               = document.getElementById('bg');
 if (backgroundImageURL){
   const safeURL = encodeURI(backgroundImageURL);
   // Hintergrund auf FIXIERTE Ebene setzen (nicht auf body)
-  bgEl.style.backgroundImage   = `url('${safeURL}')`;
-  bgEl.style.backgroundSize    = 'cover';   // 75 %
-  bgEl.style.backgroundPosition= '50% 18%';    // Y=18 %
+  bgEl.style.backgroundImage    = `url('${safeURL}')`;
+  // HIER: genau wie bei dir früher
+  bgEl.style.backgroundSize     = '75% auto';   // 75 %
+  bgEl.style.backgroundPosition = '50% 18%';    // Y = 18 %
 }
 
 /* ==== Dein Level verwenden ==== */
 const USE_LEVEL = true;
 
-/* ==== DEIN 29×29-Level (unverändert) ==== */
+/* ==== DEIN 29×29-Level ==== */
 const LEVEL = [
  [1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
  [1,0,0,0,0,0,1,1,0,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1],
@@ -361,7 +399,7 @@ function buildBigGrid(carve, entranceColBig, mid){
 
 /* ==== Sizing ==== */
 function fitCellSize(onlySize){
-  // verfügbare Größe: echtes sichtbares Viewportmaß (mobil-freundlich)
+  // verfügbares Maß: echtes sichtbares Viewportmaß (mobil-freundlich)
   const vh = window.visualViewport ? window.visualViewport.height : Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
   const vw = window.visualViewport ? window.visualViewport.width  : Math.max(document.documentElement.clientWidth,  window.innerWidth  || 0);
 
@@ -386,7 +424,6 @@ function fitCellSize(onlySize){
   document.documentElement.style.setProperty('--cell', cell + 'px');
   document.documentElement.style.setProperty('--gap',  gap  + 'px');
 
-  // Frame soll nicht eigene Scrollbarkeit erzwingen
   frameEl.style.maxHeight = 'none';
 
   if (!onlySize && GRID){ draw(); }
