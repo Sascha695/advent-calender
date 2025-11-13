@@ -16,7 +16,7 @@
   .bg-fixed{
     position:fixed; inset:0; z-index:0;
     background-repeat:no-repeat;
-    background-size: 100%;          
+    background-size: cover;          
     background-position:50% 50%;       /* Y = 18% */
     background-attachment:fixed;       /* falls Browser das respektiert */
   }
@@ -154,7 +154,7 @@ if (backgroundImageURL){
   const safeURL = encodeURI(backgroundImageURL);
   // Hintergrund auf FIXIERTE Ebene setzen (nicht auf body)
   bgEl.style.backgroundImage   = `url('${safeURL}')`;
-  bgEl.style.backgroundSize    = '75% auto';   // 75 %
+  bgEl.style.backgroundSize    = 'cover';   // 75 %
   bgEl.style.backgroundPosition= '50% 18%';    // Y=18 %
 }
 
