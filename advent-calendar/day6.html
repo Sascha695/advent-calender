@@ -264,10 +264,27 @@ fogBtn.addEventListener('click', function(){
   draw();
 });
 partyEl.addEventListener('click', hideParty);
+window.addEventListener('resize', fitCellSize);
 
 /* Start */
 generateAndDraw();
 attachControls();
+
+/* ==== Spielfeld an Handy anpassen ==== */
+function fitCellSize(){
+  const cols = GRID || (SIZE + 2);       // Anzahl Spalten (31)
+  const vw = Math.max(
+    document.documentElement.clientWidth || 0,
+    window.innerWidth || 0
+  );
+  const margin = 24;                     // kleiner Rand links/rechts
+  const cellByW = Math.floor((vw - margin) / cols);
+  const cell = Math.max(8, Math.min(22, cellByW)); // min/max Größe
+  const gap  = cell < 16 ? 1 : 2;
+
+  document.documentElement.style.setProperty('--cell', cell + 'px');
+  document.documentElement.style.setProperty('--gap',  gap  + 'px');
+}
 
 /* ==== Pipeline ==== */
 function generateAndDraw(){
@@ -287,6 +304,7 @@ function generateAndDraw(){
   visited = new Set();
   visited.add(position.r + "," + position.c);
 
+  fitCellSize();   // HIER an Display anpassen
   draw();
 }
 
@@ -459,10 +477,11 @@ function computeVisibilityStates(){
   return { seenEver: seenEver, fringeNow: fringeNow };
 }
 
+/* WICHTIG: hier kein preventScroll mehr -> keine Fehler -> Controls werden registriert */
 function focusPlayer(){
   const p = mazeEl.querySelector('.player');
   if (p && p.focus){
-    p.focus({preventScroll:true});
+    try { p.focus(); } catch(e){}
   }
 }
 
